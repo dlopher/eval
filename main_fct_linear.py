@@ -19,26 +19,38 @@ def evaluate_linear_abs():
     total_points = {}
     
     for comp in competitors:
-        for work in comp.works:
-            cost = work.cost
-            score = linear_abs(cost)
-            if cost < ABS_MIN:
-                status = "ABAIXO"
-            elif cost > ABS_MAX:
-                status = "ACIMA"
-            else:
-                status = "-"
-            results.append((comp.id, work.label, cost, score, status))
-            total_points[comp.id] = total_points.get(comp.id, 0) + score
+        for factor in comp.factors:
+            for disciplina in factor.disciplinas:
+                for projeto in disciplina.projetos:
+                    cost = projeto.cost
+                    score = linear_abs(cost)
+                    if cost < ABS_MIN:
+                        status = "ABAIXO"
+                    elif cost > ABS_MAX:
+                        status = "ACIMA"
+                    else:
+                        status = "-"
+                    results.append((
+                        comp.id,
+                        factor.name,
+                        disciplina.name,
+                        projeto.name,
+                        cost,
+                        score,
+                        status
+                    ))
+                    total_points[comp.id] = total_points.get(comp.id, 0) + score
     
     # Build static header
-    titulo_factor = "FACTOR 1. EDIFÍCIOS ESCOLARES"
+    titulo_factor = "FACTOR A. QUALIDADE DA EQUIPA TÉCNICA"
     header = (
-        f"{'Concorrente':<16}"
-        f"{'Obra':<24}"
-        f"{'Custo (€)':<18}"
-        f"{'Pontuação':<14}"
-        f"{'Status':<12}"
+        f"{'Concorrente':<15}"
+        f"{'Factor':<60}"
+        f"{'Disciplina':<18}"
+        f"{'Projeto':<36}"
+        f"{'Custo (€)':<15}"
+        f"{'Pontuação':<12}"
+        f"{'Status':<9}"
     )
     sep = "-" * len(header)
     
@@ -46,12 +58,14 @@ def evaluate_linear_abs():
     print("\n" + titulo_factor)
     print("\n" + header)
     print(sep)
-    for cid, label, cost, score, st in results:
-        print(f"{cid:<16}"
-              f"{label:<24}"
-              f"{cost:<18,.2f}"
-              f"{score:<14.4f}"
-              f"{st:<12}")
+    for cid, factor, disciplina, projeto, cost, score, st in results:
+        print(f"{cid:<15}"
+              f"{factor:<60}"
+              f"{disciplina:<18}"
+              f"{projeto:<36}"
+              f"{cost:<15,.2f}"
+              f"{score:<12.4f}"
+              f"{st:<9}")
       
     # Write to .txt
     txt_file = os.path.join(out_dir, f"{timestamp}_linearFCT.txt")
@@ -61,22 +75,24 @@ def evaluate_linear_abs():
         f.write(f"EvaluaçãoLinear: P = 1 + (CUSTO OBRA - {ABS_MIN})*(99/({ABS_MAX}-{ABS_MIN}))\n\n")
         f.write(header + "\n" + sep + "\n")
         last_cid = None
-        for i, (cid, label, cost, score, st) in enumerate(results):
+        for i, (cid, factor, disciplina, projeto, cost, score, st) in enumerate(results):
             if last_cid is not None and cid != last_cid:
                 # Write total
                 f.write(sep + "\n")
-                f.write(f"{last_cid:<16}{'':<24}{'':<18}{total_points[last_cid]:<14.4f}{'':<12}\n")
+                f.write(f"{last_cid:<15}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
                 f.write(sep + "\n")
-            f.write(f"{cid:<16}"
-                    f"{label:<24}"
-                    f"{cost:<18,.2f}"
-                    f"{score:<14.4f}"
-                    f"{st:<12}\n")
+            f.write(f"{cid:<15}"
+                    f"{factor:<60}"
+                    f"{disciplina:<18}"
+                    f"{projeto:<36}"
+                    f"{cost:<15,.2f}"
+                    f"{score:<12.4f}"
+                    f"{st:<9}\n")
             last_cid = cid
         # Write last total
         if last_cid is not None:
             f.write(sep + "\n")
-            f.write(f"{last_cid:<16}{'':<24}{'':<18}{total_points[last_cid]:<14.4f}{'':<12}\n")
+            f.write(f"{last_cid:<15}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
             f.write(sep + "\n")
     
     print(f"\nTable saved to: {txt_file}")
@@ -94,12 +110,12 @@ def evaluate_linear_abs():
     color_map = {cid: cmap(i % cmap.N) for i, cid in enumerate(comp_ids)}
     
     # Marcar cada obra
-    for cid, label, cost, score, st in results:
+    for cid, factor, disciplina, projeto, cost, score, st in results:
         color = color_map[cid]
         cost_l = f"{cost:,.2f}€".replace(",", "X").replace(".", ",").replace("X", ".")  # Format cost
-        legend_label = f"{cid}-{label}-({cost_l})"
-        if st == "-":   
-            plt.scatter(cost, score, s=25, marker="o", color = color,
+        legend_label = f"{cid}-{factor}-{disciplina}{projeto}-({cost_l})"
+        if st == "-":
+            plt.scatter(cost, score, s=25, marker="o", color=color,
                     label=f"{legend_label} ({score:.2f})")
         elif st == "ABAIXO":
             plt.scatter(cost, score, s=30, marker="x", color=color,
@@ -114,7 +130,7 @@ def evaluate_linear_abs():
     # plt.xlim(ABS_MIN, ABS_MAX)  # X axis from 0 to max --- old version
     
     # WORK ON X-AXIS DYNAMICALLY
-    costs = [cost for _, _, cost, _, _ in results]
+    costs = [cost for _, _, _, _, cost, _, _ in results]
 
     # include both the absolute thresholds and any actual bid extremes
     raw_min = min(costs + [ABS_MIN])
