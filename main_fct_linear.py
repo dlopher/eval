@@ -4,7 +4,7 @@ import matplotlib.ticker as mticker
 import numpy as np
 import os
 
-from config_fct import ABS_MIN, ABS_MAX, SIGMOID_K_FCT, SIGMOID_X0_FCT
+from config_fct import ABS_MIN, ABS_MAX, FACTOR_WEIGHTS, MAX_PROJECTS_PER_DISCIPLINA, MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJECT
 from bids_fct import competitors
 from curves import linear_abs
 
@@ -18,7 +18,16 @@ def evaluate_linear_abs():
     results = []
     total_points = {}
     
+    factor_ids = [factor.id for factor in competitors[0].factors]
+    factor_disciplinas = {factor.id: len(factor.disciplinas) for factor in competitors[0].factors}
+    factor_max_score = {
+        fid: factor_disciplinas[fid] * MAX_PROJECTS_PER_DISCIPLINA * MAX_SCORE_PER_PROJECT
+        for fid in factor_disciplinas
+        }
+    concorrente_factor_scores = {}  # {cid: {fid: sum}}
+
     for comp in competitors:
+        concorrente_factor_scores[comp.id] = {fid: 0.0 for fid in factor_ids}
         for factor in comp.factors:
             for disciplina in factor.disciplinas:
                 for projeto in disciplina.projetos:
@@ -40,8 +49,21 @@ def evaluate_linear_abs():
                         score,
                         status
                     ))
-                    total_points[comp.id] = total_points.get(comp.id, 0) + score
+                    concorrente_factor_scores[comp.id][factor.id] += score
+                    # (old--just concorrente) total_points[comp.id] = total_points.get(comp.id, 0) + score
     
+    concorrente_final_scores = {}
+    for cid, factor_scores in concorrente_factor_scores.items():
+        total=0.0
+        for fid in factor_ids:
+            w = FACTOR_WEIGHTS[fid]
+            Pk = factor_scores[fid]
+            Pk_max = factor_max_score[fid]
+            norm = Pk / Pk_max if Pk_max else 0
+            total += w * norm
+        concorrente_final_scores[cid] = round(10 * total / 100, 4)
+
+
     # Build static header
     titulo_factor = "FACTOR A. QUALIDADE DA EQUIPA TÉCNICA"
     header = (
@@ -74,15 +96,20 @@ def evaluate_linear_abs():
     txt_file = os.path.join(out_dir, f"{timestamp}_linearFCT.txt")
     with open(txt_file, "w", encoding="utf-8") as f:
         f.write(f"{titulo_factor}\n")
-        f.write("EvaluaçãoLinear: P = 1 + (x - ABS_MIN)*(99/(ABS_MAX-ABS_MIN))\n")
-        f.write(f"EvaluaçãoLinear: P = 1 + (CUSTO OBRA - {ABS_MIN})*(99/({ABS_MAX}-{ABS_MIN}))\n\n")
+        f.write("EvaluaçãoLinearProjeto: P = 1 + (x - ABS_MIN)*(99/(ABS_MAX-ABS_MIN))\n")
+        f.write(f"EvaluaçãoLinearProjeto: P = {MIN_SCORE_PER_PROJECT} + (ValorOBRA - {ABS_MIN}) * (({MAX_SCORE_PER_PROJECT} - {MIN_SCORE_PER_PROJECT}) / ({ABS_MAX} - {ABS_MIN}))\n\n")
         f.write(header + "\n" + sep + "\n")
         last_cid = None
-        for i, (cid, fid, factor, disciplina, projeto, cost, score, st) in enumerate(results):
+        for row in results:
+            cid,fid, factor, disciplina, projeto, cost, score, st = row
             if last_cid is not None and cid != last_cid:
+                # Write per-factor sub-totals
+                f.write(sep + "\n")
+                for sub_fid in factor_disciplinas:
+                    f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<15}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
                 # Write total
                 f.write(sep + "\n")
-                f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
+                f.write(f"{last_cid:<15}{'':<9}{'Pontuação Final':<60}{'':<18}{'':<36}{'':<15}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
                 f.write(sep + "\n")
             f.write(f"{cid:<15}"
                     f"{fid:<9}"
@@ -96,7 +123,10 @@ def evaluate_linear_abs():
         # Write last total
         if last_cid is not None:
             f.write(sep + "\n")
-            f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
+            for sub_fid in factor_disciplinas:
+                f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<15}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
+            f.write(sep + "\n")
+            f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<15}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
             f.write(sep + "\n")
     
     print(f"\nTable saved to: {txt_file}")
