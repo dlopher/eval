@@ -58,13 +58,13 @@ def sigmoid(price: float) -> float:
     frac = 1.0 / (1.0 + math.exp(SIGMOID_K * (x_rel - SIGMOID_X0)))
     return max(0.0, min(100.0, frac * 100.0))
 
+"""
 def sigmoid_abs(price: float) -> float:
-    """
-    Absolute‐threshold sigmoid:
-    - price < ABS_MIN → 0
-    - price >= ABS_MAX → 100
-    - otherwise → logistic between 1 and 100 points.
-    """
+    
+    # - price < ABS_MIN → 0
+    # - price >= ABS_MAX → 100
+    # - otherwise → logistic between 1 and 100 points.
+    
     # outside clamps
     if price < ABS_MIN:
         return 0.0
@@ -75,3 +75,5 @@ def sigmoid_abs(price: float) -> float:
     exponent = SIGMOID_K_FCT * (price - SIGMOID_X0_FCT)
     frac     = 1.0 / (1.0 + math.exp(exponent))
     return max(0.0, min(100.0, frac * 100.0))
+
+"""
