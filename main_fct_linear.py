@@ -32,6 +32,7 @@ def evaluate_linear_abs():
                         status = "-"
                     results.append((
                         comp.id,
+                        factor.id,
                         factor.name,
                         disciplina.name,
                         projeto.name,
@@ -45,6 +46,7 @@ def evaluate_linear_abs():
     titulo_factor = "FACTOR A. QUALIDADE DA EQUIPA TÉCNICA"
     header = (
         f"{'Concorrente':<15}"
+        f"{'f.ID':<9}"
         f"{'Factor':<60}"
         f"{'Disciplina':<18}"
         f"{'Projeto':<36}"
@@ -58,8 +60,9 @@ def evaluate_linear_abs():
     print("\n" + titulo_factor)
     print("\n" + header)
     print(sep)
-    for cid, factor, disciplina, projeto, cost, score, st in results:
+    for cid, fid, factor, disciplina, projeto, cost, score, st in results:
         print(f"{cid:<15}"
+              f"{fid:<9}"
               f"{factor:<60}"
               f"{disciplina:<18}"
               f"{projeto:<36}"
@@ -75,13 +78,14 @@ def evaluate_linear_abs():
         f.write(f"EvaluaçãoLinear: P = 1 + (CUSTO OBRA - {ABS_MIN})*(99/({ABS_MAX}-{ABS_MIN}))\n\n")
         f.write(header + "\n" + sep + "\n")
         last_cid = None
-        for i, (cid, factor, disciplina, projeto, cost, score, st) in enumerate(results):
+        for i, (cid, fid, factor, disciplina, projeto, cost, score, st) in enumerate(results):
             if last_cid is not None and cid != last_cid:
                 # Write total
                 f.write(sep + "\n")
-                f.write(f"{last_cid:<15}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
+                f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
                 f.write(sep + "\n")
             f.write(f"{cid:<15}"
+                    f"{fid:<9}"
                     f"{factor:<60}"
                     f"{disciplina:<18}"
                     f"{projeto:<36}"
@@ -92,7 +96,7 @@ def evaluate_linear_abs():
         # Write last total
         if last_cid is not None:
             f.write(sep + "\n")
-            f.write(f"{last_cid:<15}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
+            f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<15}{total_points[last_cid]:<12.4f}{'':<9}\n")
             f.write(sep + "\n")
     
     print(f"\nTable saved to: {txt_file}")
@@ -110,10 +114,10 @@ def evaluate_linear_abs():
     color_map = {cid: cmap(i % cmap.N) for i, cid in enumerate(comp_ids)}
     
     # Marcar cada obra
-    for cid, factor, disciplina, projeto, cost, score, st in results:
+    for cid, fid, factor, disciplina, projeto, cost, score, st in results:
         color = color_map[cid]
         cost_l = f"{cost:,.2f}€".replace(",", "X").replace(".", ",").replace("X", ".")  # Format cost
-        legend_label = f"{cid}-{factor}-{disciplina}{projeto}-({cost_l})"
+        legend_label = f"{cid}-{fid}-{disciplina}{projeto}-({cost_l})"
         if st == "-":
             plt.scatter(cost, score, s=25, marker="o", color=color,
                     label=f"{legend_label} ({score:.2f})")
@@ -130,7 +134,7 @@ def evaluate_linear_abs():
     # plt.xlim(ABS_MIN, ABS_MAX)  # X axis from 0 to max --- old version
     
     # WORK ON X-AXIS DYNAMICALLY
-    costs = [cost for _, _, _, _, cost, _, _ in results]
+    costs = [cost for _, _, _, _, _, cost, _, _ in results]
 
     # include both the absolute thresholds and any actual bid extremes
     raw_min = min(costs + [ABS_MIN])

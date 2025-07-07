@@ -1,0 +1,6 @@
+FACTOR A. QUALIDADE DA EQUIPA TÉCNICA
+EvaluaçãoLinear: P = 1 + (x - ABS_MIN)*(99/(ABS_MAX-ABS_MIN))
+EvaluaçãoLinear: P = 1 + (CUSTO OBRA - 6000000.0)*(99/(20000000.0-6000000.0))
+
+Concorrente Factor                              Disciplina      Projeto         Custo (€)     Pontuação   Status  
+------------------------------------------------------------------------------------------------------------------

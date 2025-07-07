@@ -4,7 +4,8 @@ Concorrente(
     id=...,
     factors=[
         Factor(
-            name="A1. Obras de edifícios de UC na UE",
+            id = "A1",
+            name="Obras de edifícios de UC na UE",
             disciplinas=[
                 Disciplina(name="Coordenação", projetos=[Projeto("Projeto 1", ...), ...]),
                 Disciplina(name="ARQ", projetos=[Projeto("Projeto 1", ...), ...]),
@@ -16,7 +17,8 @@ Concorrente(
             ]
         ),
         Factor(
-            name="A2. Obras de edifícios escolares na UE",
+            id="A2",
+            name="Obras de edifícios escolares na UE",
             disciplinas=[
                 Disciplina(name="Coordenação", projetos=[Projeto("Projeto 1", ...), ...]),
                 Disciplina(name="ARQ", projetos=[Projeto("Projeto 1", ...), ...]),
@@ -28,7 +30,8 @@ Concorrente(
             ]
         ),
         Factor(
-            name="A3. Obras de reabilitação com reforço sísmico na UE",
+            id="A3",
+            name="Obras de reabilitação com reforço sísmico na UE",
             disciplinas=[
                 Disciplina(name="Coordenação", projetos=[Projeto("Projeto 1", ...), ...]),
                 Disciplina(name="ARQ", projetos=[Projeto("Projeto 1", ...), ...]),
@@ -36,7 +39,8 @@ Concorrente(
             ]
         ),
         Factor(
-            name="A4. NZEB + 20, LEAD, BREAM na UE",
+            id="A4",
+            name="Edifícios NZEB + 20, LEAD ou BREAM na UE",
             disciplinas=[
                 Disciplina(name="Coordenação", projetos=[Projeto("Projeto 1", ...), ...]),
                 Disciplina(name="ARQ", projetos=[Projeto("Projeto 1", ...), ...]),
@@ -66,6 +70,7 @@ class Disciplina:
 
 @dataclass
 class Factor:
+    id: str
     name: str
     disciplinas: List[Disciplina]
 
@@ -81,7 +86,8 @@ competitors: List[Concorrente] = [
         id=1,
         factors=[
             Factor(
-                name="A1. Obras de edifícios de UC na UE",
+                id ="A1",
+                name="Obras de edifícios de Ut. Colectiva na UE",
                 disciplinas=[
                     Disciplina(
                         "Coordenação",
@@ -129,7 +135,8 @@ competitors: List[Concorrente] = [
                 ]
             ),
             Factor(
-                name="A2. Obras de edifícios escolares na UE",
+                id="A2",
+                name="Obras de edifícios escolares na UE",
                 disciplinas=[
                     Disciplina(
                         "Coordenação",
@@ -177,7 +184,8 @@ competitors: List[Concorrente] = [
                 ]
             ),
             Factor(
-                name="A3. Obras de reabilitação com reforço sísmico na UE",
+                id="A3",
+                name="Obras de reabilitação com reforço sísmico na UE",
                 disciplinas=[
                     Disciplina(
                         "Coordenação",
@@ -200,7 +208,8 @@ competitors: List[Concorrente] = [
                 ]
             ),
             Factor(
-                name="A4. NZEB + 20, LEAD, BREAM na UE",
+                id="A4",
+                name="Edifícios NZEB + 20, LEAD ou BREAM na UE",
                 disciplinas=[
                     Disciplina(
                         "Coordenação",
