@@ -1,18 +1,18 @@
 import math
 from config import REF_PRICE, SIGMOID_K, SIGMOID_X0, LOWER_THRESHOLD, UPPER_THRESHOLD
-from config_fct import ABS_MIN, ABS_MAX, MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJECT
+from config_fct import MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJECT
 
-def linear_abs(cost: float) -> float:
+def linear_abs(cost: float, abs_min: float, abs_max: float) -> float:
     """
     Linear mapping from ABS_MIN→1 point up to ABS_MAX→100 points.
     Below ABS_MIN → 0; above ABS_MAX → 100.
     """
-    if cost < ABS_MIN:
+    if cost < abs_min:
         return 0.0
-    if cost > ABS_MAX:
+    if cost > abs_max:
         return float(MAX_SCORE_PER_PROJECT)
     # interpolate so ABS_MIN => 1, ABS_MAX => 100
-    return MIN_SCORE_PER_PROJECT + (cost - ABS_MIN) * ((MAX_SCORE_PER_PROJECT - MIN_SCORE_PER_PROJECT) / (ABS_MAX - ABS_MIN))
+    return MIN_SCORE_PER_PROJECT + (cost - abs_min) * ((MAX_SCORE_PER_PROJECT - MIN_SCORE_PER_PROJECT) / (abs_max - abs_min))
 
 def _clamp(x, lo=0.0, hi=100.0):
     return max(lo, min(hi, x))

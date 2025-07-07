@@ -4,7 +4,7 @@ import matplotlib.ticker as mticker
 import numpy as np
 import os
 
-from config_fct import ABS_MIN, ABS_MAX, FACTOR_WEIGHTS, MAX_PROJECTS_PER_DISCIPLINA, MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJECT
+from config_fct import FACTOR_THRESHOLDS, FACTOR_WEIGHTS, MAX_PROJECTS_PER_DISCIPLINA, MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJECT
 from bids_fct import competitors
 from curves import linear_abs
 
@@ -14,9 +14,8 @@ def evaluate_linear_abs():
     out_dir = "output"
     os.makedirs(out_dir, exist_ok=True)
     
-    # Calcular puntos de los trabajos y el totoal por concorrente
+    # Calcular puntos de los trabajos
     results = []
-    total_points = {}
     
     factor_ids = [factor.id for factor in competitors[0].factors]
     factor_disciplinas = {factor.id: len(factor.disciplinas) for factor in competitors[0].factors}
@@ -29,13 +28,15 @@ def evaluate_linear_abs():
     for comp in competitors:
         concorrente_factor_scores[comp.id] = {fid: 0.0 for fid in factor_ids}
         for factor in comp.factors:
+            abs_min = FACTOR_THRESHOLDS[factor.id]["ABS_MIN"]
+            abs_max = FACTOR_THRESHOLDS[factor.id]["ABS_MAX"]
             for disciplina in factor.disciplinas:
                 for projeto in disciplina.projetos:
                     cost = projeto.cost
-                    score = linear_abs(cost)
-                    if cost < ABS_MIN:
+                    score = linear_abs(cost, abs_min, abs_max)
+                    if cost < abs_min:
                         status = "ABAIXO"
-                    elif cost > ABS_MAX:
+                    elif cost > abs_max:
                         status = "ACIMA"
                     else:
                         status = "-"
@@ -72,7 +73,7 @@ def evaluate_linear_abs():
         f"{'Factor':<60}"
         f"{'Disciplina':<18}"
         f"{'Projeto':<36}"
-        f"{'Custo (€)':<15}"
+        f"{'Custo (€)':<21}"
         f"{'Pontuação':<12}"
         f"{'Status':<9}"
     )
@@ -88,7 +89,7 @@ def evaluate_linear_abs():
               f"{factor:<60}"
               f"{disciplina:<18}"
               f"{projeto:<36}"
-              f"{cost:<15,.2f}"
+              f"{cost:<21,.2f}"
               f"{score:<12.4f}"
               f"{st:<9}")
       
@@ -96,8 +97,8 @@ def evaluate_linear_abs():
     txt_file = os.path.join(out_dir, f"{timestamp}_linearFCT.txt")
     with open(txt_file, "w", encoding="utf-8") as f:
         f.write(f"{titulo_factor}\n")
-        f.write("EvaluaçãoLinearProjeto: P = 1 + (x - ABS_MIN)*(99/(ABS_MAX-ABS_MIN))\n")
-        f.write(f"EvaluaçãoLinearProjeto: P = {MIN_SCORE_PER_PROJECT} + (ValorOBRA - {ABS_MIN}) * (({MAX_SCORE_PER_PROJECT} - {MIN_SCORE_PER_PROJECT}) / ({ABS_MAX} - {ABS_MIN}))\n\n")
+        f.write("EvaluaçãoLinearProjeto: P = MIN_SCORE_PER_PROJECT + (ValorOBRA - ABS_MIN)*(MAX_SCORE_PER_PROJECT - MIN_SCORE_PER_PROJECT / (ABS_MAX - ABS_MIN))\n\n")
+        # f.write(f"EvaluaçãoLinearProjeto: P = {MIN_SCORE_PER_PROJECT} + (ValorOBRA - {ABS_MIN}) * (({MAX_SCORE_PER_PROJECT} - {MIN_SCORE_PER_PROJECT}) / ({ABS_MAX} - {ABS_MIN}))\n\n")
         f.write(header + "\n" + sep + "\n")
         last_cid = None
         for row in results:
@@ -106,17 +107,17 @@ def evaluate_linear_abs():
                 # Write per-factor sub-totals
                 f.write(sep + "\n")
                 for sub_fid in factor_disciplinas:
-                    f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<15}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
+                    f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<21}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
                 # Write total
                 f.write(sep + "\n")
-                f.write(f"{last_cid:<15}{'':<9}{'Pontuação Final':<60}{'':<18}{'':<36}{'':<15}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
+                f.write(f"{last_cid:<15}{'':<9}{'Pontuação Final':<60}{'':<18}{'':<36}{'':<21}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
                 f.write(sep + "\n")
             f.write(f"{cid:<15}"
                     f"{fid:<9}"
                     f"{factor:<60}"
                     f"{disciplina:<18}"
                     f"{projeto:<36}"
-                    f"{cost:<15,.2f}"
+                    f"{cost:<21,.2f}"
                     f"{score:<12.4f}"
                     f"{st:<9}\n")
             last_cid = cid
@@ -124,23 +125,33 @@ def evaluate_linear_abs():
         if last_cid is not None:
             f.write(sep + "\n")
             for sub_fid in factor_disciplinas:
-                f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<15}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
+                f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<21}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
             f.write(sep + "\n")
-            f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<15}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
+            f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<21}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
             f.write(sep + "\n")
     
     print(f"\nTable saved to: {txt_file}")
 
-    # Construir curva sigmoide & plot
-    xs = np.linspace(ABS_MIN, ABS_MAX, 400)
-    ys = [linear_abs(x) for x in xs]
-
-    plt.figure(figsize=(16, 7))
-    plt.plot(xs, ys, label="EvalLinear", color='blue', linewidth=1.5)
+    # Construir curva (un color pro subfactor) & plot
+    unique_thresholds = {}
+    for fid in factor_ids:
+        pair = (FACTOR_THRESHOLDS[fid]["ABS_MIN"], FACTOR_THRESHOLDS[fid]["ABS_MAX"])
+        unique_thresholds[pair] = unique_thresholds.get(pair, []) + [fid]
     
-    # Create a color map (one color per competitor)
+    colors = ['blue', 'green', 'red', 'orange', 'purple', 'cyan', 'magenta', 'brown']
+    subfactor_names = []
+    plt.figure(figsize=(16, 7))
+    
+    for i, ((abs_min, abs_max), fids) in enumerate(unique_thresholds.items()):
+        xs = np.linspace(abs_min, abs_max, 400)
+        ys = [linear_abs(x, abs_min, abs_max) for x in xs]
+        label = " / ".join(fids) + f" (MIN={abs_min/1e6:.1f}M, MAX={abs_max/1e6:.1f}M)"
+        subfactor_names.extend(fids)
+        plt.plot(xs, ys, label=label, color=colors[i % len(colors)], linewidth=1.5)
+
+    # Color map por concorrente
     cmap = plt.get_cmap('tab10')  # or 'tab20', etc.
-    comp_ids = [comp.id for comp in competitors]
+    comp_ids = [comp.id for comp in competitors] 
     color_map = {cid: cmap(i % cmap.N) for i, cid in enumerate(comp_ids)}
     
     # Marcar cada obra
@@ -160,15 +171,20 @@ def evaluate_linear_abs():
     
     plt.xlabel("CUSTO OBRA (€)")
     plt.ylabel("PONTUAÇÃO (0–100)")
-    plt.title("CURVA LINEAR PARA AVALIAÇÃO DE CONDIÇÕES TÉCNICAS", pad=20)
+    subfactor_str = ", ".join(subfactor_names)
+    plt.title(f"CURVA LINEAR PARA AVALIAÇÃO DE CONDIÇÕES TÉCNICAS — Subfactores: {subfactor_str}", pad=20)
     # plt.xlim(ABS_MIN, ABS_MAX)  # X axis from 0 to max --- old version
     
     # WORK ON X-AXIS DYNAMICALLY
     costs = [cost for _, _, _, _, _, cost, _, _ in results]
 
-    # include both the absolute thresholds and any actual bid extremes
-    raw_min = min(costs + [ABS_MIN])
-    raw_max = max(costs + [ABS_MAX])
+    # include both the absolute thresholds for all factors and any actual bid extremes
+    all_abs_mins = {FACTOR_THRESHOLDS[fid]["ABS_MIN"] for fid in factor_ids}
+    all_abs_maxs = {FACTOR_THRESHOLDS[fid]["ABS_MAX"] for fid in factor_ids}
+    all_thresholds = sorted(all_abs_mins | all_abs_maxs)
+
+    raw_min = min(costs + list(all_abs_mins))
+    raw_max = max(costs + list(all_abs_maxs))
 
     # add a 5% margin on each side
     x_min = raw_min - 0.05 * (raw_max - raw_min)
@@ -179,7 +195,7 @@ def evaluate_linear_abs():
     # --- Mark thresholds explicitly on the x‑axis ---
     ticks = list(plt.xticks()[0])  # existing ticks
     # add ABS_MIN & ABS_MAX if they're not already in the list
-    for t in (ABS_MIN, ABS_MAX):
+    for t in all_thresholds:
         if t < x_min or t > x_max:
             continue
         if not any(abs(t - existing) < 1e-8 for existing in ticks):
@@ -196,7 +212,7 @@ def evaluate_linear_abs():
     ax = plt.gca()
     labels = ax.get_xticklabels()
     for i, t in enumerate(ticks):
-        if t in (ABS_MIN, ABS_MAX):
+        if t in all_thresholds:
             labels[i].set_color('red')
     ax.set_xticklabels(labels)
     
@@ -214,7 +230,7 @@ def evaluate_linear_abs():
     plt.tight_layout()
     plt.legend(
         loc='lower left',
-        bbox_to_anchor=(0, -0.40, 1, 1),
+        bbox_to_anchor=(0, -1, 1, 1),
         # mode="expand",
         ncol=1,
         borderaxespad=0,
