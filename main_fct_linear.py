@@ -97,7 +97,7 @@ def evaluate_linear_abs():
     txt_file = os.path.join(out_dir, f"{timestamp}_linearFCT.txt")
     with open(txt_file, "w", encoding="utf-8") as f:
         f.write(f"{titulo_factor}\n")
-        f.write("EvaluaçãoLinearProjeto: P = MIN_SCORE_PER_PROJECT + (ValorOBRA - ABS_MIN)*(MAX_SCORE_PER_PROJECT - MIN_SCORE_PER_PROJECT / (ABS_MAX - ABS_MIN))\n\n")
+        f.write("EvaluaçãoLinearProjeto: P = MIN_SCORE_PER_PROJECT + ((ValorOBRA - ABS_MIN)*(MAX_SCORE_PER_PROJECT - MIN_SCORE_PER_PROJECT) / (ABS_MAX - ABS_MIN))\n\n")
         # f.write(f"EvaluaçãoLinearProjeto: P = {MIN_SCORE_PER_PROJECT} + (ValorOBRA - {ABS_MIN}) * (({MAX_SCORE_PER_PROJECT} - {MIN_SCORE_PER_PROJECT}) / ({ABS_MAX} - {ABS_MIN}))\n\n")
         f.write(header + "\n" + sep + "\n")
         last_cid = None

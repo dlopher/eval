@@ -18,7 +18,7 @@ def evaluate_sigmoid():
     output_folder = "output"
     os.makedirs(output_folder, exist_ok=True)
 
-    # Calcular puntos y status de las ofertas
+    # Calcular puntuación de las ofertas
     results = []
     for b in bids:
         score = sigmoid(b.price)
@@ -27,22 +27,31 @@ def evaluate_sigmoid():
             score = 0
         results.append((b.id, b.price, score, status))
     
+    accepted_prices = [price for _, price, _, status in results if status != "FORA"]
+    avg_bid = np.mean(accepted_prices)
+    anorm_x = avg_bid * 0.8  # 20% below average of all bids
+
+    results = [
+        (bid_id, price, score, status, "x" if (status == "OK" and price <= anorm_x) else "")
+        for bid_id, price, score, status in results
+    ]
+
     # Print to console
     print("\n")
-    header = f"{'ID':<12}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}"
+    header = f"{'ID':<12}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
     sep = "-" * len(header)
     print(header)
     print(sep)
-    for bid_id, price, score, status in results:
+    for bid_id, price, score, status, pab in results:
         pontos_str = f"{score:<14.6f}" if status == "OK" else " " * 14
-        print(f"{bid_id:<12}{price:<24,.2f}{pontos_str}{status:<12}")
-    
+        print(f"{bid_id:<12}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}")
+
     # Formula and constants used
-    formula_str = "CurvaSigmoide: Pont = 1 / (1 + e^(k * (x_rel - x0)))"
+    formula_str = "P = 1 / (1 + e^(k * (x_rel - x0)))"
     #    score = 1 / (1 + e^(k * (x_rel - x0)))
     #    score = 1 / (1 + eᵏ⁽ˣʳᵉˡ ⁻ ˣ⁰⁾)
     #    score = \frac{1}{1 + e^{k(x_{rel} - x_0)}}
-    constants_str = f"k = {SIGMOID_K:.4f}, x0 = {SIGMOID_X0:.4f} (x_rel = price/REF_PRICE - 1)"
+    constants_str = f"k = {SIGMOID_K:.4f} || x0 = {SIGMOID_X0:.4f} || x_rel = ((OFERTA/ref_price) - 1)"
 
     # Print to .txt file with timestamp
     txt_filename = os.path.join(output_folder, f"{timestamp}_sigmoidEvaluationPreco.txt")
@@ -51,9 +60,9 @@ def evaluate_sigmoid():
         f.write(constants_str + "\n\n")
         f.write(header + "\n")
         f.write(sep + "\n")
-        for bid_id, price, score, status in results:
+        for bid_id, price, score, status, pab in results:
             pontos_str = f"{score:<14.6f}" if status == "OK" else " " * 14
-            f.write(f"{bid_id:<12}{price:<24,.2f}{pontos_str}{status:<12}\n")
+            f.write(f"{bid_id:<12}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}\n")
     print(f"\nTable saved to: {txt_filename}")
 
     # Construir curva sigmoide
@@ -64,13 +73,11 @@ def evaluate_sigmoid():
     plt.figure(figsize=(16, 7))
     
     # Plot curve. Marca los límites de la curva (en leyenda) para referencia interna
-    plt.plot(xs, ys, label=f"CurvaEvalSigmoide ({LOWER_THRESHOLD:.2f}_{SCORE_AT_LOWER:.4f} <----> {UPPER_THRESHOLD:.2f}_{SCORE_AT_UPPER:.4f})", color='blue', linewidth=1)
-    # plt.plot(xs, ys, label="CurvaEvalSigmoidePreço", color='blue', linewidth=1.5)
+    # plt.plot(xs, ys, label=f"CurvaEvalSigmoide ({LOWER_THRESHOLD:.2f}_{SCORE_AT_LOWER:.4f} <----> {UPPER_THRESHOLD:.2f}_{SCORE_AT_UPPER:.4f})", color='blue', linewidth=1)
+    plt.plot(xs, ys, label="CurvaEvalPreço", color='blue', linewidth=1.5)
     
     # Líneas verticales (BASE e ANORM. BAIXO)
     upper_x = UPPER_THRESHOLD * REF_PRICE
-    avg_bid = np.mean([price for _, price, _, status in results if status != "FORA"])
-    anorm_x = avg_bid * 0.8  # 20% below average of all bids
 
     plt.axvline(upper_x, color='red', linestyle='--', linewidth=1)
     plt.axvline(anorm_x, color='brown', linestyle='--', linewidth=0.5)
@@ -108,15 +115,17 @@ def evaluate_sigmoid():
     ax.set_xticklabels(labels)
 
     # Mark bids
-    for bid_id, price, score, status in results:
-        if status == "OK":
+    for bid_id, price, score, status, pab in results:
+        if (status == "OK" and pab == ""):
             plt.scatter(price, score, s=25, marker= "o", label=f"{bid_id} - {price:,.2f}€ - {score:.4f} pontos")
+        elif (status == "OK" and pab == "x"):
+            plt.scatter(price, score, s=15, marker="x", label=f"{bid_id} - {price:,.2f}€ - {score:.4f} pontos (Preço Anormalmente Baixo)")
         else:
             plt.scatter(price, score, s=15, marker="x", color='red', label=f"{bid_id} - {price:,.2f}€ - {score:.4f} pontos (FORA)")
     
     plt.xlabel("PREÇO (€)")
     plt.ylabel("PONTUAÇÃO (0–100)")
-    plt.title("CURVA SIGMOIDE DE AVALIAÇÃO DE PREÇO", pad=40)
+    plt.title("CURVA DE AVALIAÇÃO DE PREÇO", pad=40)
     plt.xlim(0, UPPER_THRESHOLD * REF_PRICE * 1.1)  # X axis from 0 to max + 10% margin to the left
     # plt.xticks(ticks, rotation=45)  # Rotate x-ticks for better visibility
     plt.ylim(-5, 105) # Y axis from 0 to 100 + 5% margin

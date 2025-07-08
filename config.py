@@ -1,15 +1,17 @@
 import math
 
 # Precio de referencia (euros)
-REF_PRICE = 1_053_496.00
+REF_PRICE = 1_050_000.00
+# ES RESTELO = 1_050_000.00
 
 # Limites asumibles(SIEMPRE como fracciones de REF_PRICE)
-LOWER_THRESHOLD = 0.80   # 20% ABAJO
+LOWER_THRESHOLD = 0.90   # 10% ABAJO
 UPPER_THRESHOLD = 1.20   # 20% ARRIBA
 
 # Puntuaciones para los límites (escala 0–100)
 SCORE_AT_LOWER = 90    
 SCORE_AT_UPPER =  1
+# ES RESTELO: 0.9 --> 90 // 1.2 --> 1
 
 # Conversion en fracciones
 s_low = SCORE_AT_LOWER / 100.0
