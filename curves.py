@@ -52,6 +52,16 @@ def exponential(price: float, alpha: float = 5.0) -> float:
     return _clamp((num / den) * 100)
 
 def sigmoid(price: float) -> float:
+    """
+    Calculates a score from 0 to 100 using a sigmoid function:
+        P = 100 / (1 + exp(k * ((price / REF_PRICE) - 1 - x0)))
+    where:
+        - price: the bid/proposal value
+        - REF_PRICE: reference price
+        - k, x0: sigmoid parameters
+    Returns:
+        Score in the range [0, 100].
+    """
     # compute relative delta
     x_rel = (price / REF_PRICE) - 1.0
     # logistic with steepness K and center X0

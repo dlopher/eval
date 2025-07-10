@@ -55,14 +55,14 @@ def evaluate_linear_abs():
     
     concorrente_final_scores = {}
     for cid, factor_scores in concorrente_factor_scores.items():
-        total=0.0
+        total = 0.0
         for fid in factor_ids:
             w = FACTOR_WEIGHTS[fid]
             Pk = factor_scores[fid]
             Pk_max = factor_max_score[fid]
             norm = Pk / Pk_max if Pk_max else 0
             total += w * norm
-        concorrente_final_scores[cid] = round(10 * total / 100, 4)
+        concorrente_final_scores[cid] = round(total, 4)
 
 
     # Build static header
