@@ -7,9 +7,9 @@ class Bid:
     price: float  # in euros
 
 # CONCORRENTES, PREÇO
-# bids: List[Bid] = []
+bids: List[Bid] = []
 
-
+"""
 bids: List[Bid] = [
     Bid(1, 1_053_496.00),
     Bid(2, 1_200_000.00),
@@ -22,3 +22,4 @@ bids: List[Bid] = [
     Bid(9,   900_000.00),
     Bid(10, 600_000.00),
 ]
+"""

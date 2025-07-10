@@ -141,15 +141,15 @@ def evaluate_sigmoid():
     
     plt.legend(
         loc='lower left',
-        bbox_to_anchor=(0, -0.60, 1, 1),
+        bbox_to_anchor=(0, -0.10, 1, 1),
         # mode="expand",
         ncol=1,
         borderaxespad=0,
         frameon=False,
     )
 
-    # Formula y constantes en gráfico
-    plt.figtext(0.53, 0.9, formula_str + "\n" + constants_str, wrap=True, ha='center', fontsize=9)
+    # Formula y constantes en debajo del título
+    # plt.figtext(0.53, 0.9, formula_str + "\n" + constants_str, wrap=True, ha='center', fontsize=9)
 
     # Save to PNG with timestamp
     png_filename = os.path.join(output_folder, f"{timestamp}_sigmoidEvaluation.png")
