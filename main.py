@@ -7,6 +7,50 @@ from config import REF_PRICE, LOWER_THRESHOLD, UPPER_THRESHOLD, SCORE_AT_LOWER, 
 from bids import bids
 from curves import sigmoid
 
+
+def format_milions(x, upper_x, anorm_x, pos=None):
+    if abs(x - upper_x) < 1e-6:
+        val = f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{val} M€\nPREÇO BASE"
+    elif abs(x - anorm_x) < 1e-6:
+        val = f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"\n\n{val} M€\nPREÇO ANORM. BAIXO"
+    else:
+        return f"{x/1e6:.1f}M€"
+
+def transform_y(y):
+    if y < 90:
+        return y
+    elif y < 99: # First-level scaling for 90-99
+        return 90 + (y - 90) * 5
+    else: # Second level scaling for 99-100 range
+        return 90 + (99 - 90) * 5 + (y - 99) * 10
+
+def inverse_transform_y(y):
+    if y < 90:
+        return y
+    elif y < 99:  # First-level scaling for 90-99
+        return 90 + (y - 90) / 5
+    else:  # Second level scaling for 99-100 range
+        return 99 + (y - 99) / 10
+
+def transform_x(x):
+    if x < 800_000:
+        return x / 4
+    else:
+        return 800_000/4 + (x - 800_000) # Regular spacing for higher values
+
+# Update axis labels to show actual values
+def inverse_transform_x(x_transformed):
+    if x_transformed < 800_000/4:
+        return x_transformed * 4
+    else:
+        return 800_000 + (x_transformed - 800_000/4)
+
+def format_xaxis(x, upper_x, anorm_x, pos=None):
+    actual_x = inverse_transform_x(x)
+    return format_milions(actual_x, upper_x, anorm_x)
+
 def evaluate_sigmoid():
     # Calcular preços limite
     # min_price = LOWER_THRESHOLD * REF_PRICE
@@ -66,16 +110,18 @@ def evaluate_sigmoid():
     print(f"\nTable saved to: {txt_filename}")
 
     # Construir curva sigmoide
-    xs = np.linspace(0,
-                     UPPER_THRESHOLD * REF_PRICE, 1000)
+    xs = np.linspace(0, UPPER_THRESHOLD * REF_PRICE, 1000)
+    xs_transformed = [transform_x(x) for x in xs]
     ys = [sigmoid(x) for x in xs]
+    ys_transformed = [transform_y(y) for y in ys]
+    
+    plt.figure(figsize=(16, 14))
 
-    plt.figure(figsize=(16, 7))
-    
-    # Plot curve. Marca los límites de la curva (en leyenda) para referencia interna
-    # plt.plot(xs, ys, label=f"CurvaEvalSigmoide ({LOWER_THRESHOLD:.2f}_{SCORE_AT_LOWER:.4f} <----> {UPPER_THRESHOLD:.2f}_{SCORE_AT_UPPER:.4f})", color='blue', linewidth=1)
-    plt.plot(xs, ys, label="CurvaEvalPreço", color='blue', linewidth=1.5)
-    
+    # Plot curve
+    # plt.plot(xs, ys, label=f"CurvaEvalPreço ({LOWER_THRESHOLD:.2f}_{SCORE_AT_LOWER:.4f} <----> {UPPER_THRESHOLD:.2f}_{SCORE_AT_UPPER:.4f})", color='blue', linewidth=1)
+    # plt.plot(xs, ys, label="CurvaEvalPreço", color='blue', linewidth=1.5)
+    plt.plot(xs_transformed, ys_transformed, label="CurvaEvalPreço", color='blue', linewidth=1.5)
+
     # Líneas verticales (BASE e ANORM. BAIXO)
     upper_x = UPPER_THRESHOLD * REF_PRICE
 
@@ -89,20 +135,11 @@ def evaluate_sigmoid():
     if anorm_x not in ticks:
         ticks.append(anorm_x)
     ticks = sorted(ticks)
-
-    def format_milions(x, pos=None):
-        if abs(x - upper_x) < 1e-6:
-            val = f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            return f"{val} M€\nPREÇO BASE"
-        elif abs(x - anorm_x) < 1e-6:
-            val = f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            return f"\n\n{val} M€\nPREÇO ANORM. BAIXO"
-        else:
-            return f"{x/1e6:.1f}M€"
     
-    plt.xticks(ticks, [format_milions(t) for t in ticks], fontsize = 8, rotation = 0)
+    plt.xticks(ticks, [format_xaxis(t, upper_x, anorm_x) for t in ticks], fontsize = 8, rotation = 0)
 
     ax = plt.gca()
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: format_xaxis(x, upper_x, anorm_x, pos)))
     labels = ax.get_xticklabels()
     for i, t in enumerate(ticks):
         if abs(t - upper_x) < 1e-6:
@@ -128,9 +165,22 @@ def evaluate_sigmoid():
     plt.title("CURVA DE AVALIAÇÃO DE PREÇO", pad=40)
     plt.xlim(0, UPPER_THRESHOLD * REF_PRICE * 1.1)  # X axis from 0 to max + 10% margin to the left
     # plt.xticks(ticks, rotation=45)  # Rotate x-ticks for better visibility
-    plt.ylim(-5, 105) # Y axis from 0 to 100 + 5% margin
-    plt.yticks(np.arange(0, 101, 10))  # Tick every 10 points
+    # plt.ylim(-5, 105) # Extend y-axis slightly beyond 100 for better visualization
+    # plt.yticks(np.arange(0, 101, 10))  # Tick every 10 points
     plt.grid(True)
+
+    # Adjust y-axis scaling to emphasize the gap between 90 and 100
+    
+    # Generate custom ticks for the y-axis
+    original_yticks = np.arange(0, 101, 10)
+    custom_yticks_values = [transform_y(y) for y in original_yticks]
+
+    plt.ylim(transform_y(-5), transform_y(105))  # Use transformed limits to extend y-axis slightly beyond 100 for better visualization
+    plt.yticks(custom_yticks_values, [f"{y}" for y in original_yticks])
+    ax = plt.gca()
+    ax.set_yticks(custom_yticks_values)
+    ax.set_yticklabels([f"{y}" for y in original_yticks])
+    ax.set_ylim(transform_y(-5), transform_y(105))
 
     # Visulaización de ejes
     for spine in plt.gca().spines.values():
@@ -147,6 +197,7 @@ def evaluate_sigmoid():
         borderaxespad=0,
         frameon=False,
     )
+    plt.show()
 
     # Formula y constantes en debajo del título
     # plt.figtext(0.53, 0.9, formula_str + "\n" + constants_str, wrap=True, ha='center', fontsize=9)
