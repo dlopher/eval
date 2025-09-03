@@ -1,9 +1,15 @@
 import math
 
-# Precio de referencia (euros)
-REF_PRICE = 1_050_000.00
-# ES RESTELO = 1_050_000.00
+# Pontuação máxima segundo programa preliminar
+MAX_SCORE = 100.0
+MIN_SCORE = 1.0
 
+# Precio de referencia (euros)
+# ES RESTELO = 1_050_000.00
+REF_PRICE = 1_050_000.00
+MAX_PRICE = REF_PRICE * 1.20
+
+###------ SIGMOIDE PARAMETERS ------###
 # Limites asumibles(SIEMPRE como fracciones de REF_PRICE)
 LOWER_THRESHOLD = 0.90   # 10% ABAJO
 UPPER_THRESHOLD = 1.20   # 20% ARRIBA

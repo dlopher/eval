@@ -1,5 +1,5 @@
 import math
-from config import REF_PRICE, SIGMOID_K, SIGMOID_X0, LOWER_THRESHOLD, UPPER_THRESHOLD
+from config import MAX_SCORE, MIN_SCORE, MAX_PRICE, REF_PRICE, SIGMOID_K, SIGMOID_X0, LOWER_THRESHOLD, UPPER_THRESHOLD
 from config_fct import MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJECT
 
 def linear_abs(cost: float, abs_min: float, abs_max: float) -> float:
@@ -17,41 +17,56 @@ def linear_abs(cost: float, abs_min: float, abs_max: float) -> float:
 def _clamp(x, lo=0.0, hi=100.0):
     return max(lo, min(hi, x))
 
-def linear(price: float) -> float:
+def linear(price: float, min_score: float = MIN_SCORE, max_score: float = MAX_SCORE) -> float:
     """
-    Linear map: at LOWER_THRESHOLD*REF → 100, at UPPER_THRESHOLD*REF → 0
+    Linear mapping from 0 to MAX_PRICE.
+    Higher price → lower score.
     """
-    x = price / REF_PRICE
-    # normalize to [0,1]
-    norm = (UPPER_THRESHOLD - x) / (UPPER_THRESHOLD - LOWER_THRESHOLD)
-    return _clamp(norm * 100)
+    # Normalize price to [0,1] range, inverted
+    norm = 1.0 - min(1.0, price / MAX_PRICE)
+    # Map to score range
+    return min_score + norm * (max_score - min_score)
 
-def inverse_proportional(price: float) -> float:
+def inverse_proportional(price: float, min_score: float = MIN_SCORE, max_score: float = MAX_SCORE, power: float = 1.0) -> float:
     """
-    Inverse‐proportional map: higher price → lower score,
-    normalized so that at LOWER_THRESHOLD*REF → 100, at UPPER_THRESHOLD*REF → 0
-    """
-    inv_val = (REF_PRICE / price)
-    inv_lo = 1 / LOWER_THRESHOLD
-    inv_hi = 1 / UPPER_THRESHOLD
-    norm = (inv_val - inv_hi) / (inv_lo - inv_hi)
-    return _clamp(norm * 100)
+    Inverse‐proportional map: higher price → lower score.
 
-def exponential(price: float, alpha: float = 5.0) -> float:
+    Uses the mathematical function: score ∝ (MAX_PRICE/price)^power
+    
+    Parameters:
+        power: Higher values create a more aggressive curve that favors lower prices
+               - power=1: Standard hyperbola (1/x shape)
+               - power=2: Quadratic fall-off
+               - power=0.5: Square root fall-off (more gradual)
     """
-    Exponential decay: at LOWER_THRESHOLD*REF → ~100,
-    at UPPER_THRESHOLD*REF → ~0. Uses parameter alpha to control sharpness.
-    """
-    # normalized [0,1] between safe thresholds
-    x = price / REF_PRICE
-    t = (x - LOWER_THRESHOLD) / (UPPER_THRESHOLD - LOWER_THRESHOLD)
-    t = max(0.0, min(1.0, t))
-    # map t∈[0,1] to score∈[100→0] via (exp(-α t) − exp(-α))/(1 − exp(-α))
-    num = math.exp(-alpha * t) - math.exp(-alpha)
-    den = 1 - math.exp(-alpha)
-    return _clamp((num / den) * 100)
+    if price <= 0:
+        return max_score
+        
+    # Calculate inverse value with optional power for steepness control
+    inv_val = (MAX_PRICE / price) ** power
+    
+    # Normalize between 1 and MAX_PRICE/epsilon
+    norm = (inv_val - 1) / ((MAX_PRICE / 0.001) - 1)
+    norm = max(0.0, min(1.0, norm))
+    
+    # Map to score range
+    return min_score + norm * (max_score - min_score)
 
-def sigmoid(price: float) -> float:
+def exponential(price: float, min_score: float = MIN_SCORE, max_score: float = MAX_SCORE, alpha: float = 4.0) -> float:
+    """
+    Exponential decay: score decays exponentially as price increases.
+    Higher alpha = steeper curve.
+    """
+    # Normalize price to [0,1] range
+    t = min(1.0, price / MAX_PRICE)
+    
+    # Exponential decay function
+    decay = math.exp(-alpha * t)
+    
+    # Map to score range
+    return min_score + decay * (max_score - min_score)
+
+def sigmoid(price: float, min_score: float = MIN_SCORE, max_score: float = MAX_SCORE) -> float:
     """
     Calculates a score from 0 to 100 using a sigmoid function:
         P = 100 / (1 + exp(k * ((price / REF_PRICE) - 1 - x0)))
@@ -60,14 +75,42 @@ def sigmoid(price: float) -> float:
         - REF_PRICE: reference price
         - k, x0: sigmoid parameters
     Returns:
-        Score in the range [0, 100].
+        Score in the range [min_score, max_score].
     """
     # compute relative delta
     x_rel = (price / REF_PRICE) - 1.0
+    
     # logistic with steepness K and center X0
     frac = 1.0 / (1.0 + math.exp(SIGMOID_K * (x_rel - SIGMOID_X0)))
-    return max(0.0, min(100.0, frac * 100.0))
+    
+    # Map to the specified score range
+    score = min_score + frac * (max_score - min_score)
+    
+    return max(min_score, min(max_score, score))
 
+def semicircle(price: float, min_score: MIN_SCORE, max_score: MAX_SCORE) -> float:
+    """
+    Calculates a score from 0 to 100 using a semicircle function:
+        C = 100 * sqrt(1 - x²)
+    where:
+        - x = price / max_price
+        - max_price = REF_PRICE * UPPER_THRESHOLD
+    
+    Returns:
+        Score in the range [min_score, max_score, 100].
+    """
+    x = price / MAX_PRICE
+    
+    # Ensure x is in valid range for sqrt(1-x²)
+    x = max(0.0, min(1.0, x))
+    
+    # Semicircle equation: normalized to [0, 1]
+    frac = math.sqrt(1 - x * x)
+
+    # Map to the specified score range
+    score = min_score + frac * (max_score - min_score)
+    
+    return max(min_score, min(max_score, score))
 """
 def sigmoid_abs(price: float) -> float:
     
