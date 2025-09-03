@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 from config import MAX_SCORE, MIN_SCORE, MAX_PRICE, REF_PRICE, LOWER_THRESHOLD, UPPER_THRESHOLD, SCORE_AT_LOWER, SCORE_AT_UPPER, SIGMOID_K, SIGMOID_X0
-from bids import bids, calc_abnormally_low_bid
+from bids_restelo import bids, calc_abnormally_low_bid
 from curves import sigmoid, linear, semicircle, inverse_proportional, exponential
 
 def evaluate_bids(curve_functions=None, curve_names=None):
@@ -24,18 +24,18 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     os.makedirs(output_folder, exist_ok=True)
     
     if curve_functions is None:
-        curve_functions = [sigmoid]
+        curve_functions = [semicircle]
     if curve_names is None:
-        curve_names = ["sigmoid"]
-    
+        curve_names = ["semicircle"]
+
     is_multi_curve = len(curve_functions) > 1
     
     # Calcular preço base
     max_price = MAX_PRICE
     
     # Pre-determine which bids are accepted and calculate anorm_x once
-    bid_statuses = [(b.id, b.price, "OK" if b.price <= max_price else "FORA") for b in bids]
-    accepted_prices = [price for _, price, status in bid_statuses if status == "OK"]
+    bid_statuses = [(b.id, b.name, b.price, "OK" if b.price <= max_price else "FORA") for b in bids]
+    accepted_prices = [price for _, _, price, status in bid_statuses if status == "OK"]
     anorm_x = calc_abnormally_low_bid(accepted_prices)
 
     # Prearar los resultados de CADA curva
@@ -44,14 +44,14 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     for i, curve_function in enumerate(curve_functions):
         # Calcular puntuación de las ofertas usando cada curva
         results = []
-        for bid_id, price, status in bid_statuses:
+        for bid_id, name, price, status in bid_statuses:
             if status == "FORA":
                 score = 0
             else:
                 score = curve_function(price, min_score=MIN_SCORE, max_score=MAX_SCORE)
             # Mark abnormally low bids
             pab = "x" if (status == "OK" and price <= anorm_x) else ""
-            results.append((bid_id, price, score, status, pab))
+            results.append((bid_id, name, price, score, status, pab))
 
         all_results.append((results, curve_names[i], curve_function))
 
@@ -59,14 +59,14 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     for results, curve_name, curve_function in all_results:
         print("\n")
         print(f"\n{curve_name.upper()} CURVE EVALUATION:")
-        header = f"{'ID':<12}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
+        header = f"{'ID':<12}{'Nome':<48}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
         sep = "-" * len(header)
         print(header)
         print(sep)
-        for bid_id, price, score, status, pab in results:
+        for bid_id, name, price, score, status, pab in results:
             pontos_str = f"{score:<14.6f}" if status == "OK" else " " * 14
-            print(f"{bid_id:<12}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}")
-        
+            print(f"{bid_id:<12}{name:<48}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}")
+
     # Print to .txt file with timestamp
     if bids:
         curve_names_str = "_".join(curve_names)
@@ -103,16 +103,16 @@ def evaluate_bids(curve_functions=None, curve_names=None):
                 f.write(f"Constants: {constants_str}\n\n")
 
                 # Write table header
-                header = f"{'ID':<12}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
+                header = f"{'ID':<12}{'Nome':<36}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
                 sep = "-" * len(header)
                 f.write(header + "\n")
                 f.write(sep + "\n")
 
                 # Write bid results
-                for bid_id, price, score, status, pab in results:
+                for bid_id, name, price, score, status, pab in results:
                     pontos_str = f"{score:<14.6f}" if status == "OK" else " " * 14
-                    f.write(f"{bid_id:<12}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}\n")
-                
+                    f.write(f"{bid_id:<12}{name:<36}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}\n")
+
             f.write("\n" + "=" * 80 + "\n")
 
         print(f"\nCombined table saved to: {txt_filename}")
@@ -185,7 +185,7 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     unique_bids = set()
 
     for results, _, _ in all_results:
-        for bid_id, _, _, status, pab in results:
+        for bid_id, _, _, _, status, pab in results:
             unique_bids.add(bid_id)
 
             # Assign markers
@@ -203,16 +203,16 @@ def evaluate_bids(curve_functions=None, curve_names=None):
 
     # Mark bids on the plot
     for curve_idx, (results, curve_name, _) in enumerate(all_results):
-        for bid_id, price, score, status, pab in results:
+        for bid_id, name, price, score, status, pab in results:
             marker, size, color = bid_markers[bid_id]
             if color is None:
                 color = bid_colors[bid_id]
             
             # Include curve name in the label.
             if status == "FORA":
-                label = f"Bid {bid_id} - {price:,.2f}€ - FORA ({curve_name})"
+                label = f"{name} ({bid_id}) - {price:,.2f}€ - FORA ({curve_name})"
             else:
-                label = f"Bid {bid_id} - {price:,.2f}€ - {score:.2f} pts ({curve_name})"
+                label = f"{name} ({bid_id}) - {price:,.2f}€ - {score:.2f} pts ({curve_name})"
                 if pab == "x":
                     label += " - (PAB)"
             
@@ -283,9 +283,9 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     # Process and group bid markers
     handles, labels = [], []
     for curve_idx, (results, curve_name, _) in enumerate(all_results):
-        for bid_id, price, score, status, pab in results:
+        for bid_id, name, price, score, status, pab in results:
             # Get scatter point object
-            scatter_idx = curve_idx * len(results) + results.index((bid_id, price, score, status, pab))
+            scatter_idx = curve_idx * len(results) + results.index((bid_id, name, price, score, status, pab))
             scatter = plt.gca().collections[scatter_idx]
             handles.append(scatter)
             
