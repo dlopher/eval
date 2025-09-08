@@ -2,7 +2,7 @@ import math
 
 # Pontuação máxima segundo programa preliminar
 MAX_SCORE = 100.0
-MIN_SCORE = 1.0
+MIN_SCORE = 0.0
 
 # Precio de referencia (euros)
 # ES RESTELO = 1_050_000.00

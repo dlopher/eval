@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 from config_fct import FACTOR_THRESHOLDS, FACTOR_WEIGHTS, MAX_PROJECTS_PER_DISCIPLINA, MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJECT
-from bids_fct import competitors
+from bids_fct_restelo import competitors
 from curves import linear_abs
 
 def evaluate_linear_abs():
@@ -23,23 +23,40 @@ def evaluate_linear_abs():
         fid: factor_disciplinas[fid] * MAX_PROJECTS_PER_DISCIPLINA * MAX_SCORE_PER_PROJECT
         for fid in factor_disciplinas
         }
+    
     concorrente_factor_scores = {}  # {cid: {fid: sum}}
-
     for comp in competitors:
         concorrente_factor_scores[comp.id] = {fid: 0.0 for fid in factor_ids}
+    
+    concorrente_disciplina_scores = {}  # {cid: {fid: {did: sum}}}
+    for comp in competitors:
+        concorrente_disciplina_scores[comp.id] = {}
+        for factor in comp.factors:
+            concorrente_disciplina_scores[comp.id][factor.id] = {}
+            for disciplina in factor.disciplinas:
+                concorrente_disciplina_scores[comp.id][factor.id][disciplina.name] = 0.0
+
+    for comp in competitors: 
         for factor in comp.factors:
             abs_min = FACTOR_THRESHOLDS[factor.id]["ABS_MIN"]
             abs_max = FACTOR_THRESHOLDS[factor.id]["ABS_MAX"]
             for disciplina in factor.disciplinas:
+                disciplina_score = 0.0
                 for projeto in disciplina.projetos:
                     cost = projeto.cost
-                    score = linear_abs(cost, abs_min, abs_max)
-                    if cost < abs_min:
-                        status = "ABAIXO"
+                    # Check price threshold and status
+                    if cost < abs_min or projeto.status:
+                        score = 0
+                        status = "DESCL" if projeto.status else "ABAIXO"
+                    
                     elif cost > abs_max:
+                        score = MAX_SCORE_PER_PROJECT
                         status = "ACIMA"
+                    
                     else:
+                        score = linear_abs(cost, abs_min, abs_max)
                         status = "-"
+                    
                     results.append((
                         comp.id,
                         factor.id,
@@ -48,10 +65,11 @@ def evaluate_linear_abs():
                         projeto.name,
                         cost,
                         score,
-                        status
+                        status,
+                        projeto.observations
                     ))
+                    concorrente_disciplina_scores[comp.id][factor.id][disciplina.name] += score
                     concorrente_factor_scores[comp.id][factor.id] += score
-                    # (old--just concorrente) total_points[comp.id] = total_points.get(comp.id, 0) + score
     
     concorrente_final_scores = {}
     for cid, factor_scores in concorrente_factor_scores.items():
@@ -65,33 +83,19 @@ def evaluate_linear_abs():
         concorrente_final_scores[cid] = round(total, 4)
 
 
-    # Build static header
+    # Print to console. REDUX.
     titulo_factor = "FACTOR A. QUALIDADE DA EQUIPA TÉCNICA"
-    header = (
-        f"{'Concorrente':<15}"
-        f"{'f.ID':<9}"
-        f"{'Factor':<60}"
-        f"{'Disciplina':<18}"
-        f"{'Projeto':<36}"
-        f"{'Custo (€)':<21}"
-        f"{'Pontuação':<12}"
-        f"{'Status':<9}"
-    )
-    sep = "-" * len(header)
-    
-    # Print to console. REDUX. 
-    print("\n" + titulo_factor)
-    print("\n" + header)
-    print(sep)
-    for cid, fid, factor, disciplina, projeto, cost, score, st in results:
+    print("\n" + titulo_factor + "\n")
+    for cid, fid, factor, disciplina, projeto, cost, score, st, _ in results:
         print(f"{cid:<15}"
               f"{fid:<9}"
-              f"{factor:<60}"
+              f"{factor:<54}"
               f"{disciplina:<18}"
-              f"{projeto:<36}"
+              f"{projeto:<76}"
               f"{cost:<21,.2f}"
               f"{score:<12.4f}"
-              f"{st:<9}")
+              f"{st:<9}"
+            )
       
     # Write to .txt
     txt_file = os.path.join(out_dir, f"{timestamp}_linearFCT.txt")
@@ -99,39 +103,87 @@ def evaluate_linear_abs():
         f.write(f"{titulo_factor}\n")
         f.write("EvaluaçãoLinearProjeto: P = MIN_SCORE_PER_PROJECT + ((ValorOBRA - ABS_MIN)*(MAX_SCORE_PER_PROJECT - MIN_SCORE_PER_PROJECT) / (ABS_MAX - ABS_MIN))\n\n")
         # f.write(f"EvaluaçãoLinearProjeto: P = {MIN_SCORE_PER_PROJECT} + (ValorOBRA - {ABS_MIN}) * (({MAX_SCORE_PER_PROJECT} - {MIN_SCORE_PER_PROJECT}) / ({ABS_MAX} - {ABS_MIN}))\n\n")
+        header = (
+            f"{'Concorrente':<15}"
+            f"{'f.ID':<9}"
+            f"{'Factor':<54}"
+            f"{'Disciplina':<18}"
+            f"{'Projeto':<76}"
+            f"{'Custo (€)':<21}"
+            f"{'Pontuação':<12}"
+            f"{'Status':<9}"
+            f"{'Observações':<36}"
+        )
+        sep = "-" * len(header)
         f.write(header + "\n" + sep + "\n")
+        
         last_cid = None
+        last_fid = None
+        last_disciplina = None
+
         for row in results:
-            cid,fid, factor, disciplina, projeto, cost, score, st = row
+            cid,fid, factor, disciplina, projeto, cost, score, st, obs = row
+
+            # When concorrente changes, print all previous totals
             if last_cid is not None and cid != last_cid:
-                # Write per-factor sub-totals
+                # Print last discipline subtotal
+                f.write(f"{last_cid:<15}{last_fid:<9}{'':<54}{last_disciplina:<18}{'':<76}{'':<21}{concorrente_disciplina_scores[last_cid][last_fid][last_disciplina]:<12.4f}{'':<9}{'':<36}\n")
+                f.write("\n")
+
+                # Print last factor subtotal
                 f.write(sep + "\n")
-                for sub_fid in factor_disciplinas:
-                    f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<21}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
-                # Write total
+                f.write(f"{last_cid:<15}{last_fid:<9}{'SUBTOTAL':<54}{'':<18}{'':<76}{'':<21}{concorrente_factor_scores[last_cid][last_fid]:<12.4f}{'':<9}{'':<36}\n")
+                
+                # Print final total for this concorrente
                 f.write(sep + "\n")
-                f.write(f"{last_cid:<15}{'':<9}{'Pontuação Final':<60}{'':<18}{'':<36}{'':<21}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
+                f.write(f"{last_cid:<15}{'TOTAL':<9}{'*Pontuação do Factor A com ponderação por subfator':<54}{'':<18}{'':<76}{'':<21}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}{'':<36}\n")
                 f.write(sep + "\n")
-            f.write(f"{cid:<15}"
-                    f"{fid:<9}"
-                    f"{factor:<60}"
-                    f"{disciplina:<18}"
-                    f"{projeto:<36}"
-                    f"{cost:<21,.2f}"
-                    f"{score:<12.4f}"
-                    f"{st:<9}\n")
+                f.write("\n")
+                f.write(sep + "\n")
+
+            # When factor changes within same concorrente
+            elif last_cid is not None and fid != last_fid:
+                # Print last disciplina sub-total
+                f.write(f"{last_cid:<15}{last_fid:<9}{'':<54}{last_disciplina:<18}{'':<76}{'':<21}{concorrente_disciplina_scores[last_cid][last_fid][last_disciplina]:<12.4f}{'':<9}{'':<36}\n")
+                f.write("\n")
+
+                # Print factor sub-total
+                f.write(sep + "\n")
+                f.write(f"{last_cid:<15}{last_fid:<9}{'SUBTOTAL':<54}{'':<18}{'':<76}{'':<21}{concorrente_factor_scores[last_cid][last_fid]:<12.4f}{'':<9}{'':<36}\n")
+                f.write(sep + "\n")
+            
+            # When only disciplina changes
+            elif last_disciplina is not None and disciplina != last_disciplina:
+                f.write(f"{cid:<15}{fid:<9}{'':<54}{last_disciplina:<18}{'':<76}{'':<21}{concorrente_disciplina_scores[cid][fid][last_disciplina]:<12.4f}{'':<9}{'':<36}\n")
+                f.write("\n")
+
+            # Write current row
+            f.write(f"{cid:<15}{fid:<9}{factor:<54}{disciplina:<18}{projeto:<76}{cost:<21,.2f}{score:<12.4f}{st:<9}{obs:<36}\n")
+                
             last_cid = cid
-        # Write last total
+            last_fid = fid
+            last_disciplina = disciplina
+
+        # Print final subtotals for last concorrente
         if last_cid is not None:
+            # Print last discipline subtotal
+            f.write(f"{last_cid:<15}{last_fid:<9}{'':<54}{last_disciplina:<18}{'':<76}{'':<21}{concorrente_disciplina_scores[last_cid][last_fid][last_disciplina]:<12.4f}{'':<9}{'':<36}\n")
+            f.write("\n")
+
+            # Print last factor subtotal
             f.write(sep + "\n")
-            for sub_fid in factor_disciplinas:
-                f.write(f"{last_cid:<15}{sub_fid:<9}{'':<60}{'':<18}{'':<36}{'':<21}{concorrente_factor_scores[last_cid][sub_fid]:<12.4f}{'':<9}\n")
+            f.write(f"{last_cid:<15}{last_fid:<9}{'SUBTOTAL':<54}{'':<18}{'':<76}{'':<21}{concorrente_factor_scores[last_cid][last_fid]:<12.4f}{'':<9}{'':<36}\n")
+
+            # Print final total for last concorrente
             f.write(sep + "\n")
-            f.write(f"{last_cid:<15}{'':<9}{'':<60}{'':<18}{'':<36}{'':<21}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}\n")
+            f.write(f"{last_cid:<15}{'TOTAL':<9}{'*Pontuação do Factor A com ponderação por subfator':<54}{'':<18}{'':<76}{'':<21}{concorrente_final_scores[last_cid]:<12.4f}{'':<9}{'':<36}\n")
             f.write(sep + "\n")
-    
+            f.write("\n")
+            f.write(sep + "\n")
+
     print(f"\nTable saved to: {txt_file}")
 
+"""
     # Construir curva (un color pro subfactor) & plot
     unique_thresholds = {}
     for fid in factor_ids:
@@ -219,13 +271,12 @@ def evaluate_linear_abs():
     plt.ylim(-5, 105) # Y axis with some "extra-room"
     plt.yticks(np.arange(0, 101, 10))  # Tick every 10 points
     plt.grid(True)
-
-    """
+    
     # Visulaización de ejes
-    for spine in plt.gca().spines.values():
-        spine.set_color('#cccccc')
-        spine.set_linewidth(0.5)
-    """
+    # for spine in plt.gca().spines.values():
+        # spine.set_color('#cccccc')
+        # spine.set_linewidth(0.5)
+    
     # Leyenda
     plt.tight_layout()
     plt.legend(
@@ -243,6 +294,7 @@ def evaluate_linear_abs():
     plt.close()
     print(f"Plot saved to: {png_file}\n")
     print("\n")
+"""
 
 if __name__ == "__main__":
     evaluate_linear_abs()

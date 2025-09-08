@@ -32,6 +32,7 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     
     # Calcular preço base
     max_price = MAX_PRICE
+    print (MAX_PRICE)
     
     # Pre-determine which bids are accepted and calculate anorm_x once
     bid_statuses = [(b.id, b.name, b.price, "OK" if b.price <= max_price else "FORA") for b in bids]
@@ -59,13 +60,13 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     for results, curve_name, curve_function in all_results:
         print("\n")
         print(f"\n{curve_name.upper()} CURVE EVALUATION:")
-        header = f"{'ID':<12}{'Nome':<48}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
+        header = f"{'ID':<12}{'Nome':<24}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
         sep = "-" * len(header)
         print(header)
         print(sep)
         for bid_id, name, price, score, status, pab in results:
             pontos_str = f"{score:<14.6f}" if status == "OK" else " " * 14
-            print(f"{bid_id:<12}{name:<48}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}")
+            print(f"{bid_id:<12}{name:<24}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}")
 
     # Print to .txt file with timestamp
     if bids:
@@ -103,7 +104,7 @@ def evaluate_bids(curve_functions=None, curve_names=None):
                 f.write(f"Constants: {constants_str}\n\n")
 
                 # Write table header
-                header = f"{'ID':<12}{'Nome':<36}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
+                header = f"{'ID':<12}{'Nome':<24}{'Preço (€)':<24}{'Pontuação':<14}{'Status':<12}{'PAB':<6}"
                 sep = "-" * len(header)
                 f.write(header + "\n")
                 f.write(sep + "\n")
@@ -111,7 +112,7 @@ def evaluate_bids(curve_functions=None, curve_names=None):
                 # Write bid results
                 for bid_id, name, price, score, status, pab in results:
                     pontos_str = f"{score:<14.6f}" if status == "OK" else " " * 14
-                    f.write(f"{bid_id:<12}{name:<36}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}\n")
+                    f.write(f"{bid_id:<12}{name:<24}{price:<24,.2f}{pontos_str}{status:<12}{pab:<6}\n")
 
             f.write("\n" + "=" * 80 + "\n")
 
@@ -291,9 +292,9 @@ def evaluate_bids(curve_functions=None, curve_names=None):
             
             # Format label
             if status == "FORA":
-                label = f"Bid {bid_id} - {price:,.2f}€ - FORA ({curve_name})"
+                label = f"{name} {bid_id} - {price:,.2f}€ - FORA ({curve_name})"
             else:
-                label = f"Bid {bid_id} - {price:,.2f}€ - {score:.2f} pts ({curve_name})"
+                label = f"{name} {bid_id} - {price:,.2f}€ - {score:.2f} pts ({curve_name})"
                 if pab == "x":
                     label += " - (PAB)"
             labels.append(label)
