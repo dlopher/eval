@@ -62,6 +62,8 @@ from typing import List
 class Projeto:
     name: str
     cost: float
+    observations: str = ""
+    status: str = ""
 
 @dataclass
 class Disciplina:

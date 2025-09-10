@@ -32,7 +32,7 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     
     # Calcular preço base
     max_price = MAX_PRICE
-    print (MAX_PRICE)
+    # print (MAX_PRICE)
     
     # Pre-determine which bids are accepted and calculate anorm_x once
     bid_statuses = [(b.id, b.name, b.price, "OK" if b.price <= max_price else "FORA") for b in bids]

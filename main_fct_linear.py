@@ -43,19 +43,22 @@ def evaluate_linear_abs():
             for disciplina in factor.disciplinas:
                 disciplina_score = 0.0
                 for projeto in disciplina.projetos:
-                    cost = projeto.cost
-                    # Check price threshold and status
-                    if cost < abs_min or projeto.status:
+                    # First check if project is disqualified
+                    if projeto.status:
                         score = 0
-                        status = "DESCL" if projeto.status else "ABAIXO"
-                    
-                    elif cost > abs_max:
-                        score = MAX_SCORE_PER_PROJECT
-                        status = "ACIMA"
-                    
+                        status = "DESCL"
                     else:
-                        score = linear_abs(cost, abs_min, abs_max)
-                        status = "-"
+                        # Only evaluate price if project is not disqualified
+                        cost = projeto.cost
+                        if cost < abs_min:
+                            score = 0
+                            status = "ABAIXO"
+                        elif cost > abs_max:
+                            score = MAX_SCORE_PER_PROJECT
+                            status = "ACIMA"
+                        else:
+                            score = linear_abs(cost, abs_min, abs_max)
+                            status = "-"
                     
                     results.append((
                         comp.id,
@@ -182,119 +185,6 @@ def evaluate_linear_abs():
             f.write(sep + "\n")
 
     print(f"\nTable saved to: {txt_file}")
-
-"""
-    # Construir curva (un color pro subfactor) & plot
-    unique_thresholds = {}
-    for fid in factor_ids:
-        pair = (FACTOR_THRESHOLDS[fid]["ABS_MIN"], FACTOR_THRESHOLDS[fid]["ABS_MAX"])
-        unique_thresholds[pair] = unique_thresholds.get(pair, []) + [fid]
-    
-    colors = ['blue', 'green', 'red', 'orange', 'purple', 'cyan', 'magenta', 'brown']
-    subfactor_names = []
-    plt.figure(figsize=(16, 7))
-    
-    for i, ((abs_min, abs_max), fids) in enumerate(unique_thresholds.items()):
-        xs = np.linspace(abs_min, abs_max, 400)
-        ys = [linear_abs(x, abs_min, abs_max) for x in xs]
-        label = " / ".join(fids) + f" (MIN={abs_min/1e6:.1f}M, MAX={abs_max/1e6:.1f}M)"
-        subfactor_names.extend(fids)
-        plt.plot(xs, ys, label=label, color=colors[i % len(colors)], linewidth=1.5)
-
-    # Color map por concorrente
-    cmap = plt.get_cmap('tab10')  # or 'tab20', etc.
-    comp_ids = [comp.id for comp in competitors] 
-    color_map = {cid: cmap(i % cmap.N) for i, cid in enumerate(comp_ids)}
-    
-    # Marcar cada obra
-    for cid, fid, factor, disciplina, projeto, cost, score, st in results:
-        color = color_map[cid]
-        cost_l = f"{cost:,.2f}€".replace(",", "X").replace(".", ",").replace("X", ".")  # Format cost
-        legend_label = f"{cid}-{fid}-{disciplina}{projeto}-({cost_l})"
-        if st == "-":
-            plt.scatter(cost, score, s=25, marker="o", color=color,
-                    label=f"{legend_label} ({score:.2f})")
-        elif st == "ABAIXO":
-            plt.scatter(cost, score, s=30, marker="x", color=color,
-                    label=f"{legend_label} ({st})")
-        elif st == "ACIMA":
-            plt.scatter(cost, score, s=25, marker="o", color=color,
-                    label=f"{legend_label} ({st})")
-    
-    plt.xlabel("CUSTO OBRA (€)")
-    plt.ylabel("PONTUAÇÃO (0–100)")
-    subfactor_str = ", ".join(subfactor_names)
-    plt.title(f"CURVA LINEAR PARA AVALIAÇÃO DE CONDIÇÕES TÉCNICAS — Subfactores: {subfactor_str}", pad=20)
-    # plt.xlim(ABS_MIN, ABS_MAX)  # X axis from 0 to max --- old version
-    
-    # WORK ON X-AXIS DYNAMICALLY
-    costs = [cost for _, _, _, _, _, cost, _, _ in results]
-
-    # include both the absolute thresholds for all factors and any actual bid extremes
-    all_abs_mins = {FACTOR_THRESHOLDS[fid]["ABS_MIN"] for fid in factor_ids}
-    all_abs_maxs = {FACTOR_THRESHOLDS[fid]["ABS_MAX"] for fid in factor_ids}
-    all_thresholds = sorted(all_abs_mins | all_abs_maxs)
-
-    raw_min = min(costs + list(all_abs_mins))
-    raw_max = max(costs + list(all_abs_maxs))
-
-    # add a 5% margin on each side
-    x_min = raw_min - 0.05 * (raw_max - raw_min)
-    x_max = raw_max + 0.05 * (raw_max - raw_min)
-
-    plt.xlim(x_min, x_max)
-
-    # --- Mark thresholds explicitly on the x‑axis ---
-    ticks = list(plt.xticks()[0])  # existing ticks
-    # add ABS_MIN & ABS_MAX if they're not already in the list
-    for t in all_thresholds:
-        if t < x_min or t > x_max:
-            continue
-        if not any(abs(t - existing) < 1e-8 for existing in ticks):
-            ticks.append(t)
-    ticks = sorted(ticks)
-    
-    def format_millions(x):
-        return f"{x/1e6:.0f}M€"
-
-    # Format tick labels in millions
-    plt.xticks(ticks, [format_millions(t) for t in ticks], fontsize=9)
-
-    # Set color for threshold labels
-    ax = plt.gca()
-    labels = ax.get_xticklabels()
-    for i, t in enumerate(ticks):
-        if t in all_thresholds:
-            labels[i].set_color('red')
-    ax.set_xticklabels(labels)
-    
-    plt.ylim(-5, 105) # Y axis with some "extra-room"
-    plt.yticks(np.arange(0, 101, 10))  # Tick every 10 points
-    plt.grid(True)
-    
-    # Visulaización de ejes
-    # for spine in plt.gca().spines.values():
-        # spine.set_color('#cccccc')
-        # spine.set_linewidth(0.5)
-    
-    # Leyenda
-    plt.tight_layout()
-    plt.legend(
-        loc='lower left',
-        bbox_to_anchor=(0, -1, 1, 1),
-        # mode="expand",
-        ncol=1,
-        borderaxespad=0,
-        frameon=False,
-    )
-
-    # Save to PNG
-    png_file = os.path.join(out_dir, f"{timestamp}_linearFCT.png")
-    plt.savefig(png_file, bbox_inches="tight")
-    plt.close()
-    print(f"Plot saved to: {png_file}\n")
-    print("\n")
-"""
 
 if __name__ == "__main__":
     evaluate_linear_abs()
