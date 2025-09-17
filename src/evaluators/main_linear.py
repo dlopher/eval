@@ -55,12 +55,14 @@ def evaluate_linear_abs(use_excel: bool = False, excel_dir: str = "data/input"):
             for disciplina in factor.disciplinas:
                 disciplina_score = 0.0
                 for projeto in disciplina.projetos:
-                    # First check if project is disqualified
+                    cost = projeto.cost
+                    
+                    # Check if project is disqualified
                     if projeto.status:
                         score = 0
                         status = "DESCL"
                     else:
-                        # Only evaluate price if project is not disqualified
+                        # Evaluate price if project is not disqualified
                         cost = projeto.cost
                         if cost < abs_min:
                             score = 0
