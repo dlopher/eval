@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 from src.config.config_price import MAX_SCORE, MIN_SCORE, MAX_PRICE, REF_PRICE, LOWER_THRESHOLD, UPPER_THRESHOLD, SCORE_AT_LOWER, SCORE_AT_UPPER, SIGMOID_K, SIGMOID_X0
-from models.bids_price_restelo import bids, calc_abnormally_low_bid
+from src.models.bids_price_restelo import bids, calc_abnormally_low_bid
 from src.utils.curves import sigmoid, linear, semicircle, inverse_proportional, exponential
 
 def evaluate_bids(curve_functions=None, curve_names=None):
