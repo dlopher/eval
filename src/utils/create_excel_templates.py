@@ -6,7 +6,8 @@ from src.config.config_linear import MAX_PROJECTS_PER_DISCIPLINA
 
 def create_competitor_template(competitor_id: int, output_dir: str):
     """Creates Excel template file for a single competitor with all factors as sheets"""
-    filename = os.path.join(output_dir, f"{competitor_id}.xlsx")
+    # cast into int to avoid float representation in a filename
+    filename = os.path.join(output_dir, f"{int(competitor_id)}.xlsx")
 
     # Create empty DataFrame with required columns
     base_columns = ["Disciplina", "Projeto", "Dono de obra", "Data", "Valor da obra", "Status", "Observações"]

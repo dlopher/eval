@@ -11,8 +11,7 @@ FACTOR_STRUCTURE = {
             "ArqPAIS", 
             "Estruturas", 
             "AVACR", 
-            "SCIE", 
-            "IESE"
+            "SCIE"
         ]
     },
     "A2": {
@@ -23,27 +22,29 @@ FACTOR_STRUCTURE = {
             "ArqPAIS", 
             "Estruturas", 
             "AVACR", 
-            "SCIE", 
-            "IESE"
+            "SCIE"
         ]
     },
     "A3": {
-        "name": "Obras de reabilitação com reforço sísmico na UE",
+        "name": "Obras de reabilitação na UE",
         "disciplinas": [
             "Coordenação", 
             "ARQ", 
-            "Estruturas"
+            "ArqPAIS", 
+            "Estruturas", 
+            "AVACR", 
+            "SCIE"
         ]
     },
     "A4": {
-        "name": "Edifícios NZEB + 20, LEAD ou BREAM na UE",
+        "name": "Obras de edifícios públicos na UE",
         "disciplinas": [
             "Coordenação", 
             "ARQ", 
-            "ECT", 
+            "ArqPAIS", 
+            "Estruturas", 
             "AVACR", 
-            "IESE", 
-            "IESA"
+            "SCIE"
         ]
     }
 }
