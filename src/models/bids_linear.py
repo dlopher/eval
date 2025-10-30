@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-# Estructura de datos
+# --- DATA STRUCTURE ---
 @dataclass
 class Projeto:
     name: str
@@ -26,7 +26,7 @@ class Concorrente:
     factors: List[Factor]
 
 
-# --- COMPETITION DATA ---
+# --- COMPETITION DATA --- (no longer used in linear mode as we will be reading from excel files)
 
 competitors: List[Concorrente] = [
     Concorrente(

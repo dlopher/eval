@@ -7,16 +7,17 @@ MIN_SCORE = 0.0
 # Precio de referencia (euros)
 # ES RESTELO = 1_050_000.00
 REF_PRICE = 1_050_000.00
-MAX_PRICE = REF_PRICE * 1.20
 
 ###------ SIGMOIDE PARAMETERS ------###
 # Limites asumibles(SIEMPRE como fracciones de REF_PRICE)
-LOWER_THRESHOLD = 0.90   # 10% ABAJO
-UPPER_THRESHOLD = 1.20   # 20% ARRIBA
+LOWER_THRESHOLD = 0.90
+UPPER_THRESHOLD = 1.20
 
-# Puntuaciones para los límites (escala 0–100)
+MAX_PRICE = REF_PRICE * UPPER_THRESHOLD
+
+# Puntuaciones para los valores en THRESHOLD (escala MIN_SCORE–MAX_SCORE)
 SCORE_AT_LOWER = 90    
-SCORE_AT_UPPER =  1
+SCORE_AT_UPPER = 1
 # ES RESTELO: 0.9 --> 90 // 1.2 --> 1
 
 # Conversion en fracciones

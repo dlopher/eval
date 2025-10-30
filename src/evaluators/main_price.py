@@ -6,16 +6,17 @@ import numpy as np
 import os
 
 from src.config.config_price import MAX_SCORE, MIN_SCORE, MAX_PRICE, REF_PRICE, LOWER_THRESHOLD, UPPER_THRESHOLD, SCORE_AT_LOWER, SCORE_AT_UPPER, SIGMOID_K, SIGMOID_X0
-from src.models.bids_price_restelo import bids, calc_abnormally_low_bid
+from src.models.bids_price import bids, calc_abnormally_low_bid, generate_test_bids
 from src.utils.curves import sigmoid, linear, semicircle, inverse_proportional, exponential
 
-def evaluate_bids(curve_functions=None, curve_names=None):
+def evaluate_bids(curve_functions=None, curve_names=None, test_mode=False):
     """
     Evaluates bids using the specified curve function(s).
     
     Parameters:
         curve_functions: List of curve functions to use
         curve_names: Names of the curves for display purposes
+        test_mode: If True, uses generated test bids instead of competition bids
     """
     # Generar marca temporal
     timestamp = datetime.now().strftime("%y%m%d-%H%M")
@@ -32,10 +33,11 @@ def evaluate_bids(curve_functions=None, curve_names=None):
     
     # Calcular preço base
     max_price = MAX_PRICE
-    # print (MAX_PRICE)
-    
+
+    evaluation_bids = generate_test_bids() if test_mode else bids
+
     # Pre-determine which bids are accepted and calculate anorm_x once
-    bid_statuses = [(b.id, b.name, b.price, "OK" if b.price <= max_price else "FORA") for b in bids]
+    bid_statuses = [(b.id, b.name, b.price, "OK" if b.price <= max_price else "FORA") for b in evaluation_bids]
     accepted_prices = [price for _, _, price, status in bid_statuses if status == "OK"]
     anorm_x = calc_abnormally_low_bid(accepted_prices)
 
@@ -244,8 +246,6 @@ def evaluate_bids(curve_functions=None, curve_names=None):
 
     plt.tight_layout()
     
-        # Replace the entire legend code section with this improved version:
-    
     # Add legends
     # Create two separate legends: one for curves, one for bids
     
@@ -343,6 +343,8 @@ if __name__ == "__main__":
                         choices=['sigmoid', 'linear', 'semicircle', 'inverse', 'exponential'],
                         default=['sigmoid'],
                         help='Curve type(s) for evaluation (default: sigmoid). Multiple curves can be specified.')
+    parser.add_argument('--test', '-t',action='store_true',
+                        help='Run in test mode with auto-generated bids.')
 
     args = parser.parse_args()
 
@@ -368,4 +370,4 @@ if __name__ == "__main__":
     curve_functions = [curve_map[c] for c in unique_curves]
     print(f"\nUsing {', '.join(unique_curves)} curve(s) for evaluation.")
 
-    evaluate_bids(curve_functions, unique_curves)
+    evaluate_bids(curve_functions, unique_curves, test_mode=args.test)
