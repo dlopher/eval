@@ -16,7 +16,7 @@ UPPER_THRESHOLD = 1.20
 MAX_PRICE = REF_PRICE * UPPER_THRESHOLD
 
 # Puntuaciones para los valores en THRESHOLD (escala MIN_SCORE–MAX_SCORE)
-SCORE_AT_LOWER = 90    
+SCORE_AT_LOWER = 85    
 SCORE_AT_UPPER = 1
 # ES RESTELO: 0.9 --> 90 // 1.2 --> 1
 

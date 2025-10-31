@@ -8,6 +8,8 @@ import os
 from src.config.config_price import MAX_SCORE, MIN_SCORE, MAX_PRICE, REF_PRICE, LOWER_THRESHOLD, UPPER_THRESHOLD, SCORE_AT_LOWER, SCORE_AT_UPPER, SIGMOID_K, SIGMOID_X0
 from src.models.bids_price import bids, calc_abnormally_low_bid, generate_test_bids
 from src.utils.curves import sigmoid, linear, semicircle, inverse_proportional, exponential
+from src.utils.excel_handler import read_bids_from_registry
+
 
 def evaluate_bids(curve_functions=None, curve_names=None, test_mode=False):
     """
@@ -34,14 +36,24 @@ def evaluate_bids(curve_functions=None, curve_names=None, test_mode=False):
     # Calcular preço base
     max_price = MAX_PRICE
 
-    evaluation_bids = generate_test_bids() if test_mode else bids
+    # Determinar bids para evaluar
+    if test_mode:
+        evaluation_bids = generate_test_bids()
+    else:
+        registry_bids = read_bids_from_registry()
+        if registry_bids:
+            evaluation_bids = registry_bids
+            print(f"Loaded {len(registry_bids)} bids from competitors.xlsx")
+        else:
+            evaluation_bids = bids
+            print("No bids found in competitors.xlsx — using fallback built-in bids list")
 
     # Pre-determine which bids are accepted and calculate anorm_x once
     bid_statuses = [(b.id, b.name, b.price, "OK" if b.price <= max_price else "FORA") for b in evaluation_bids]
     accepted_prices = [price for _, _, price, status in bid_statuses if status == "OK"]
     anorm_x = calc_abnormally_low_bid(accepted_prices)
 
-    # Prearar los resultados de CADA curva
+    # Preparar los resultados de CADA curva
     all_results = []
 
     for i, curve_function in enumerate(curve_functions):
@@ -215,7 +227,7 @@ def evaluate_bids(curve_functions=None, curve_names=None, test_mode=False):
             if status == "FORA":
                 label = f"{name} ({bid_id}) - {price:,.2f}€ - FORA ({curve_name})"
             else:
-                label = f"{name} ({bid_id}) - {price:,.2f}€ - {score:.2f} pts ({curve_name})"
+                label = f"{name} ({bid_id}) - {price:,.2f}€ - {score:.6f} pts ({curve_name})"
                 if pab == "x":
                     label += " - (PAB)"
             

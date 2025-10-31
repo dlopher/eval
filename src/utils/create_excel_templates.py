@@ -45,7 +45,7 @@ def create_excel_templates(output_dir: str = "data/input"):
             print(f"Created template for competitor {competitor_id}: {template_file}")
     else:
         # Create empty competitors registry and single-base-template
-        competitors_df = pd.DataFrame(columns=["ID", "Nome"])
+        competitors_df = pd.DataFrame(columns=["ID", "Nome", "Preço"])
         competitors_df.to_excel(competitors_file, index=False)
         print(f"Created competitors registry: {competitors_file}")
 

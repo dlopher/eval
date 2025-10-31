@@ -5,8 +5,8 @@ MAX_PROJECTS_PER_DISCIPLINA = 5
 FACTOR_WEIGHTS = {
     "A1": 20,
     "A2": 30,
-    "A3": 20,
-    "A4": 30,
+    "A3": 30,
+    "A4": 20,
 }
 
 # Absolute thresholds (euros)

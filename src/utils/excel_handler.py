@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from typing import List
 from src.models.bids_linear import Projeto, Disciplina, Factor, Concorrente
+from src.models.bids_price import Bid
 from src.config.factor_structure import FACTOR_STRUCTURE
 
 def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
@@ -61,3 +62,31 @@ def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
         competitors.append(Concorrente(id=competitor_id, factors=factors))
     
     return sorted(competitors, key=lambda x: x.id)
+
+def read_bids_from_registry(input_dir: str = "data/input") -> List[Bid]:
+    """
+    Read bids from the competitors.xlsx registry file.
+    Expects columns: ID, Nome, Preço
+    Returns a list of src.models.bids_price.Bid
+    """
+    competitors_file = os.path.join(input_dir, "competitors.xlsx")
+    if not os.path.exists(competitors_file):
+        return []
+
+    df = pd.read_excel(competitors_file)
+    bids_list: List[Bid] = []
+    
+    for _, row in df.iterrows():
+        # Skip rows without price
+        price = row.get("Preço", None)
+        if pd.isna(price) or price is None:
+            continue
+        try:
+            bid_id = int(row["ID"])
+            name = row.get("Nome", f"bid{bid_id}")
+            bids_list.append(Bid(id=bid_id, name=str(name), price=float(price)))
+        except Exception:
+            # ignore malformed rows
+            continue
+    
+    return bids_list
