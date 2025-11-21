@@ -10,7 +10,8 @@ FACTOR_STRUCTURE = {
             "ARQ", 
             "ArqPAIS", 
             "Estruturas", 
-            "AVACR"
+            "AVACR",
+            "BIM"
         ]
     },
     "A2": {
@@ -20,7 +21,8 @@ FACTOR_STRUCTURE = {
             "ARQ", 
             "ArqPAIS", 
             "Estruturas", 
-            "AVACR"
+            "AVACR",
+            "BIM"
         ]
     },
     "A3": {
@@ -30,7 +32,8 @@ FACTOR_STRUCTURE = {
             "ARQ", 
             "ArqPAIS", 
             "Estruturas", 
-            "AVACR"
+            "AVACR",
+            "BIM"
         ]
     },
     "A4": {
@@ -40,7 +43,8 @@ FACTOR_STRUCTURE = {
             "ARQ", 
             "ArqPAIS", 
             "Estruturas", 
-            "AVACR"
+            "AVACR",
+            "BIM"
         ]
     }
 }

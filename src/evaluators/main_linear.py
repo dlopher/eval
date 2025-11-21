@@ -50,9 +50,14 @@ def evaluate_linear_abs(use_excel: bool = False, excel_dir: str = "data/input"):
 
     for comp in competitors: 
         for factor in comp.factors:
-            abs_min = FACTOR_THRESHOLDS[factor.id]["ABS_MIN"]
-            abs_max = FACTOR_THRESHOLDS[factor.id]["ABS_MAX"]
             for disciplina in factor.disciplinas:
+                abs_min_max = FACTOR_THRESHOLDS[factor.id].get(
+                disciplina.name,
+                FACTOR_THRESHOLDS[factor.id]["default"]
+                )
+                abs_min = abs_min_max["ABS_MIN"]
+                abs_max = abs_min_max["ABS_MAX"]
+
                 disciplina_score = 0.0
                 for projeto in disciplina.projetos:
                     cost = projeto.cost
