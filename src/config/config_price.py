@@ -1,32 +1,34 @@
 import math
 
-# Pontuação máxima segundo programa preliminar
-MAX_SCORE = 100.0
-MIN_SCORE = 0.0
 
-# Precio de referencia (euros)
-# ES RESTELO = 1_050_000.00
-REF_PRICE = 1_050_000.00
+###------ SCORING CONFIGURATION ------###
+# Puntuaciones en los "valores de control" (puntos en escala 0-100)
+SCORE_AT_LOWER = 80    
+SCORE_AT_UPPER = 1
+# ES RESTELO: 0.9 --> 90 // 1.2 --> 1
+MAX_SCORE = 100.0  # Scale reference
+
+# Derivar MIN_SCORE from MAX_SCORE (what sigmoid asymptotically approaches)
+MIN_SCORE = SCORE_AT_UPPER
 
 ###------ SIGMOIDE PARAMETERS ------###
 # Limites asumibles(SIEMPRE como fracciones de REF_PRICE)
-LOWER_THRESHOLD = 0.90
-UPPER_THRESHOLD = 1.20
+LOWER_THRESHOLD = 0.80
+UPPER_THRESHOLD = 1.15
 
-MAX_PRICE = REF_PRICE * UPPER_THRESHOLD
+MAX_PRICE = 949_383.00
 
-# Puntuaciones para los valores en THRESHOLD (escala MIN_SCORE–MAX_SCORE)
-SCORE_AT_LOWER = 85    
-SCORE_AT_UPPER = 1
-# ES RESTELO: 0.9 --> 90 // 1.2 --> 1
+# Precio de referencia (euros)
+# ES RESTELO = 1_050_000.00
+REF_PRICE = MAX_PRICE / UPPER_THRESHOLD
 
-# Conversion en fracciones
-s_low = SCORE_AT_LOWER / 100.0
-s_up  = SCORE_AT_UPPER  / 100.0
+# Conversion en fracciones normalizadas (0-1) para el calculo en sigmoide
+s_low = SCORE_AT_LOWER / MAX_SCORE
+s_up  = SCORE_AT_UPPER  / MAX_SCORE
 
 # Relative positions (x_rel = price/REF_PRICE – 1)
-L_rel = LOWER_THRESHOLD - 1.0   # e.g. 0.90 – 1 = –0.10
-U_rel = UPPER_THRESHOLD - 1.0   # e.g. 1.20 – 1 = +0.20
+L_rel = LOWER_THRESHOLD - 1.0
+U_rel = UPPER_THRESHOLD - 1.0
 
 # For a logistic of the form
 #   score_frac(x_rel) = 1 / (1 + exp(  k*(x_rel – x0)  )),

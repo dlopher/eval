@@ -5,6 +5,7 @@ from src.config.config_linear import MIN_SCORE_PER_PROJECT, MAX_SCORE_PER_PROJEC
 
 def linear_abs(cost: float, abs_min: float, abs_max: float) -> float:
     """
+    PARA EVALUACIÓN DE PROYECTOS: MAX. PRICE -> MAX. POINTS
     Linear mapping from ABS_MIN→1 point up to ABS_MAX→100 points.
     Below ABS_MIN → 0; above ABS_MAX → 100.
     """
@@ -18,6 +19,7 @@ def linear_abs(cost: float, abs_min: float, abs_max: float) -> float:
 
 def linear(price: float, min_score: float = MIN_SCORE, max_score: float = MAX_SCORE) -> float:
     """
+    PARA EVALUACIÓN DE PRECIO: MAX. PRICE -> MIN. POINTS
     Linear mapping from 0 to MAX_PRICE.
     Higher price → lower score.
     """

@@ -16,19 +16,19 @@ FACTOR_WEIGHTS = {
 FACTOR_THRESHOLDS = {
      "A1": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
-        "BIM": {"ABS_MIN": 3_000_000.0, "ABS_MAX": 25_000_000.0},
+        "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
     },
     "A2": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
-        "BIM": {"ABS_MIN": 3_000_000.0, "ABS_MAX": 25_000_000.0},
+        "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
     },
     "A3": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
-        "BIM": {"ABS_MIN": 3_000_000.0, "ABS_MAX": 25_000_000.0},
+        "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
     },
     "A4": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
-        "BIM": {"ABS_MIN": 3_000_000.0, "ABS_MAX": 25_000_000.0},
+        "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
     },
 }
 

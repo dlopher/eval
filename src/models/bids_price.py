@@ -14,7 +14,7 @@ def generate_test_bids() -> List[Bid]:
     """
     Generates test bids based on REF_PRICE and MAX_PRICE with predefined reductions
     """
-    reductions = [2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 95]
+    reductions = [2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 75]
     test_bids = []
     
     # Add reference price bid
