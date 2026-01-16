@@ -41,17 +41,30 @@ def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
                 # Filter out empty projects
                 valid_projects = group[group["Projeto"].notna()]
 
-                projetos = [
-                    Projeto(
-                        name=row["Projeto"],
-                        cost=row["Valor de obra"],
-                        observations=row["Observações"] if pd.notna(row["Observações"]) else "",
-                        status=row["Status"] if pd.notna(row["Status"]) else ""
-                    )
-                    for _, row in valid_projects.iterrows()
-                ]
+                if factor_id == "A5":
+                    # For A5: parse hours instead of cost, but re-use structure
+                    formacoes = [
+                        Formação(
+                            name=row["Projeto"], #re-use column name using same logic
+                            hours=float(row["Valor de obra"]) if pd.notna(row["Valor de obra"]) else 0.0,
+                            observations=row["Observações"] if pd.notna(row["Observações"]) else "",
+                            status=row["Status"] if pd.notna(row["Status"]) else ""
+                        )
+                        for _, row in valid_projects.iterrows()
+                    ]
+                    disciplinas.append(Disciplina(name=disciplina_name, formacoes=formacoes))
+                else:
+                    projetos = [
+                        Projeto(
+                            name=row["Projeto"],
+                            cost=row["Valor de obra"],
+                            observations=row["Observações"] if pd.notna(row["Observações"]) else "",
+                            status=row["Status"] if pd.notna(row["Status"]) else ""
+                        )
+                        for _, row in valid_projects.iterrows()
+                    ]
 
-                disciplinas.append(Disciplina(name=disciplina_name, projetos=projetos))
+                    disciplinas.append(Disciplina(name=disciplina_name, projetos=projetos))
 
             factors.append(Factor(
                 id=factor_id,

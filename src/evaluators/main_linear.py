@@ -51,47 +51,84 @@ def evaluate_linear_abs(use_excel: bool = False, excel_dir: str = "data/input"):
     for comp in competitors: 
         for factor in comp.factors:
             for disciplina in factor.disciplinas:
-                abs_min_max = FACTOR_THRESHOLDS[factor.id].get(
-                disciplina.name,
-                FACTOR_THRESHOLDS[factor.id]["default"]
-                )
-                abs_min = abs_min_max["ABS_MIN"]
-                abs_max = abs_min_max["ABS_MAX"]
 
-                disciplina_score = 0.0
-                for projeto in disciplina.projetos:
-                    cost = projeto.cost
+                if factor.id == "A5":
+                    # A5: Sum hours instead of evaluating projects individually
+                    abs_min_max = FACTOR_THRESHOLDS[factor.id]["formação BIM"]
+                    abs_min = abs_min_max["ABS_MIN"]
+                    abs_max = abs_min_max["ABS_MAX"]
                     
-                    # Check if project is disqualified
-                    if projeto.status:
+                    # Filter out disqualified formações and sum valid hours
+                    valid_formacoes = [f for f in disciplina.formacoes if not f.status]
+                    total_hours = sum(f.hours for f in valid_formacoes)
+                    num_valid = len(valid_formacoes)
+
+                    if total_hours < abs_min:
                         score = 0
-                        status = "DESCL"
+                        status = "ABAIXO"
+                    elif total_hours > abs_max:
+                        score = MAX_SCORE_PER_PROJECT
+                        status = "ACIMA"
                     else:
-                        # Evaluate price if project is not disqualified
-                        cost = projeto.cost
-                        if cost < abs_min:
-                            score = 0
-                            status = "ABAIXO"
-                        elif cost > abs_max:
-                            score = MAX_SCORE_PER_PROJECT
-                            status = "ACIMA"
-                        else:
-                            score = linear_abs(cost, abs_min, abs_max)
-                            status = "-"
+                        score = linear_abs(total_hours, abs_min, abs_max)
+                        status = "-"
                     
                     results.append((
                         comp.id,
                         factor.id,
                         factor.name,
                         disciplina.name,
-                        projeto.name,
-                        cost,
+                        f"{num_valid} formações válidas",  # show count of valid ones
+                        total_hours,
                         score,
                         status,
-                        projeto.observations
+                        ""
                     ))
                     concorrente_disciplina_scores[comp.id][factor.id][disciplina.name] += score
                     concorrente_factor_scores[comp.id][factor.id] += score
+
+                else:
+                    abs_min_max = FACTOR_THRESHOLDS[factor.id].get(
+                    disciplina.name,
+                    FACTOR_THRESHOLDS[factor.id]["default"]
+                    )
+                    abs_min = abs_min_max["ABS_MIN"]
+                    abs_max = abs_min_max["ABS_MAX"]
+
+                    disciplina_score = 0.0
+                    for projeto in disciplina.projetos:
+                        cost = projeto.cost
+                        
+                        # Check if project is disqualified
+                        if projeto.status:
+                            score = 0
+                            status = "DESCL"
+                        else:
+                            # Evaluate price if project is not disqualified
+                            cost = projeto.cost
+                            if cost < abs_min:
+                                score = 0
+                                status = "ABAIXO"
+                            elif cost > abs_max:
+                                score = MAX_SCORE_PER_PROJECT
+                                status = "ACIMA"
+                            else:
+                                score = linear_abs(cost, abs_min, abs_max)
+                                status = "-"
+                        
+                        results.append((
+                            comp.id,
+                            factor.id,
+                            factor.name,
+                            disciplina.name,
+                            projeto.name,
+                            cost,
+                            score,
+                            status,
+                            projeto.observations
+                        ))
+                        concorrente_disciplina_scores[comp.id][factor.id][disciplina.name] += score
+                        concorrente_factor_scores[comp.id][factor.id] += score
     
     concorrente_final_scores = {}
     for cid, factor_scores in concorrente_factor_scores.items():

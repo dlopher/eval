@@ -46,5 +46,11 @@ FACTOR_STRUCTURE = {
             "AVACR",
             "BIM"
         ]
+    },
+    "A5": {
+        "name": "Horas de formação para a gestão BIM",
+        "disciplinas": [
+            "formação BIM"
+        ]
     }
 }

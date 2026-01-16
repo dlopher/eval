@@ -10,9 +10,23 @@ class Projeto:
     status: str = ""
 
 @dataclass
+class Formação:
+    name: str
+    hours: float
+    observations: str = ""
+    status: str = ""
+
+@dataclass
 class Disciplina:
     name: str
-    projetos: List[Projeto]
+    projetos: List[Projeto] = None
+    formacoes: List[Formação] = None
+
+    def __post_init__(self):
+        if self.projetos is None:
+            self.projetos = []
+        if self.formacoes is None:
+            self.formacoes = []
 
 @dataclass
 class Factor:
