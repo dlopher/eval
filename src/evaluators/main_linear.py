@@ -31,11 +31,15 @@ def evaluate_linear_abs(use_excel: bool = False, excel_dir: str = "data/input"):
     
     factor_ids = [factor.id for factor in competitors[0].factors]
     factor_disciplinas = {factor.id: len(factor.disciplinas) for factor in competitors[0].factors}
-    factor_max_score = {
-        fid: factor_disciplinas[fid] * MAX_PROJECTS_PER_DISCIPLINA * MAX_SCORE_PER_PROJECT
-        for fid in factor_disciplinas
-        }
-    
+    factor_max_score = {}
+    for fid in factor_disciplinas:
+        if fid == "A5":
+            # A5: only 1 disciplina ("formação BIM")
+            factor_max_score[fid] = 1 * MAX_SCORE_PER_PROJECT
+        else:
+            # A1 to A4: limit by MAX_PROJECTS_PER_DISCIPLINA per disciplina
+            factor_max_score[fid] = factor_disciplinas[fid] * MAX_PROJECTS_PER_DISCIPLINA * MAX_SCORE_PER_PROJECT
+         
     concorrente_factor_scores = {}  # {cid: {fid: sum}}
     for comp in competitors:
         concorrente_factor_scores[comp.id] = {fid: 0.0 for fid in factor_ids}

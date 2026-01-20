@@ -4,6 +4,8 @@ from typing import List
 from src.models.bids_linear import Projeto, Disciplina, Factor, Concorrente
 from src.models.bids_price import Bid
 from src.config.factor_structure import FACTOR_STRUCTURE
+from src.config.config_linear import MAX_PROJECTS_PER_DISCIPLINA
+
 
 def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
     """Reads Excel files and creates Concorrente objects"""
@@ -42,7 +44,7 @@ def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
                 valid_projects = group[group["Projeto"].notna()]
 
                 if factor_id == "A5":
-                    # For A5: parse hours instead of cost, but re-use structure
+                    # For A5: parse hours instead of cost, re-use structure and no-limit on number of formações
                     formacoes = [
                         Formação(
                             name=row["Projeto"], #re-use column name using same logic
@@ -63,7 +65,12 @@ def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
                         )
                         for _, row in valid_projects.iterrows()
                     ]
-
+                    # Keep only first MAX_PROJECTS_PER_DISCIPLINA projects
+                    if len(projetos) > MAX_PROJECTS_PER_DISCIPLINA:
+                        print(f"Warning: Disciplina '{disciplina_name}' in factor {factor_id} has {len(projetos)} projects. "
+                              f"Keeping only first {MAX_PROJECTS_PER_DISCIPLINA}.")
+                        projetos = projetos[:MAX_PROJECTS_PER_DISCIPLINA]
+                    
                     disciplinas.append(Disciplina(name=disciplina_name, projetos=projetos))
 
             factors.append(Factor(
