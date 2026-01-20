@@ -1,4 +1,10 @@
-# ---------LINEAR: FACTOR A --------------
+from datetime import datetime
+
+CURRENT_DATE = datetime.now()
+DATE_LIMITS = {
+    "projeto": 15,
+    "formação": 99,
+}
 
 MAX_PROJECTS_PER_DISCIPLINA = 5
 

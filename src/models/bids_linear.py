@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from typing import List
+from datetime import datetime
 
 # --- DATA STRUCTURE ---
 @dataclass
 class Projeto:
     name: str
     cost: float
+    date: datetime = None
     observations: str = ""
     status: str = ""
 
@@ -13,6 +15,7 @@ class Projeto:
 class Formação:
     name: str
     hours: float
+    # date: datetime = None
     observations: str = ""
     status: str = ""
 

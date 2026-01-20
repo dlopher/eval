@@ -5,6 +5,7 @@ from src.models.bids_linear import Projeto, Disciplina, Factor, Concorrente
 from src.models.bids_price import Bid
 from src.config.factor_structure import FACTOR_STRUCTURE
 from src.config.config_linear import MAX_PROJECTS_PER_DISCIPLINA
+from src.utils.date_validation import parse_date, validate_date
 
 
 def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
@@ -56,15 +57,23 @@ def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
                     ]
                     disciplinas.append(Disciplina(name=disciplina_name, formacoes=formacoes))
                 else:
-                    projetos = [
-                        Projeto(
+                    projetos = []
+                    for _, row in valid_projects.iterrows():
+                        date_obj = parse_date(row.get("Data", None))
+                        is_valid, status, obs = validate_date(date_obj, item_type="projeto")
+
+                        if not is_valid:
+                            status = "DESCL"
+                        
+                        projeto = Projeto(
                             name=row["Projeto"],
                             cost=row["Valor de obra"],
-                            observations=row["Observações"] if pd.notna(row["Observações"]) else "",
-                            status=row["Status"] if pd.notna(row["Status"]) else ""
+                            date=date_obj,
+                            observations=robs if obs else (row.get("Observações", "") or ""),
+                            status=status
                         )
-                        for _, row in valid_projects.iterrows()
-                    ]
+                        projetos.append(projeto)
+                    
                     # Keep only first MAX_PROJECTS_PER_DISCIPLINA projects
                     if len(projetos) > MAX_PROJECTS_PER_DISCIPLINA:
                         print(f"Warning: Disciplina '{disciplina_name}' in factor {factor_id} has {len(projetos)} projects. "
