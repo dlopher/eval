@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from typing import List
-from src.models.bids_linear import Projeto, Disciplina, Factor, Concorrente
+from src.models.bids_linear import Projeto, Disciplina, Factor, Concorrente, Formação
 from src.models.bids_price import Bid
 from src.config.factor_structure import FACTOR_STRUCTURE
 from src.config.config_linear import MAX_PROJECTS_PER_DISCIPLINA
@@ -42,23 +42,29 @@ def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
             disciplinas = []
             for disciplina_name, group in df.groupby("Disciplina"):
                 # Filter out empty projects
-                valid_projects = group[group["Projeto"].notna()]
+                valid_rows = group[group["Projeto"].notna()]
 
                 if factor_id == "A5":
                     # For A5: parse hours instead of cost, re-use structure and no-limit on number of formações
-                    formacoes = [
-                        Formação(
-                            name=row["Projeto"], #re-use column name using same logic
+                    formacoes = []
+                    for _, row in valid_rows.iterrows():
+                        date_obj = parse_date(row.get("Data", None))
+                        is_valid, status, obs = validate_date(date_obj, item_type="formacao")
+                        
+                        formacao = Formação(
+                            name=row["Projeto"],
                             hours=float(row["Valor de obra"]) if pd.notna(row["Valor de obra"]) else 0.0,
-                            observations=row["Observações"] if pd.notna(row["Observações"]) else "",
-                            status=row["Status"] if pd.notna(row["Status"]) else ""
+                            date=date_obj,
+                            observations=obs if obs else (row.get("Observações", "") or ""),
+                            status=status
                         )
-                        for _, row in valid_projects.iterrows()
-                    ]
+                        formacoes.append(formacao)
+                    
                     disciplinas.append(Disciplina(name=disciplina_name, formacoes=formacoes))
+                
                 else:
                     projetos = []
-                    for _, row in valid_projects.iterrows():
+                    for _, row in valid_rows.iterrows():
                         date_obj = parse_date(row.get("Data", None))
                         is_valid, status, obs = validate_date(date_obj, item_type="projeto")
 
@@ -69,7 +75,7 @@ def read_excel_folder(input_dir: str = "data/input") -> List[Concorrente]:
                             name=row["Projeto"],
                             cost=row["Valor de obra"],
                             date=date_obj,
-                            observations=robs if obs else (row.get("Observações", "") or ""),
+                            observations=obs if obs else (row.get("Observações", "") or ""),
                             status=status
                         )
                         projetos.append(projeto)

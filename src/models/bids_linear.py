@@ -15,7 +15,7 @@ class Projeto:
 class Formação:
     name: str
     hours: float
-    # date: datetime = None
+    date: datetime = None
     observations: str = ""
     status: str = ""
 

@@ -3,16 +3,16 @@ from datetime import datetime
 CURRENT_DATE = datetime.now()
 DATE_LIMITS = {
     "projeto": 15,
-    "formação": 99,
+    "formação": 999,
 }
 
 MAX_PROJECTS_PER_DISCIPLINA = 5
 
 FACTOR_WEIGHTS = {
-    "A1": 20,
+    "A1": 17,
     "A2": 30,
     "A3": 30,
-    "A4": 17,
+    "A4": 20,
     "A5": 3,
 }
 
@@ -23,11 +23,11 @@ FACTOR_WEIGHTS = {
 FACTOR_THRESHOLDS = {
      "A1": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
-        "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
+        # "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
     },
     "A2": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
-        "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
+        # "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
     },
     "A3": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
@@ -35,7 +35,7 @@ FACTOR_THRESHOLDS = {
     },
     "A4": {
         "default": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
-        "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
+        # "BIM": {"ABS_MIN": 5_000_000.0, "ABS_MAX": 25_000_000.0},
     },
     "A5": {
         "default": {"ABS_MIN": 100.0, "ABS_MAX": 1_000.0},
