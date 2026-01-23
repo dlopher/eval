@@ -1,36 +1,43 @@
 from datetime import datetime
 import re
-from src.config.config_linear import CURRENT_DATE, DATE_LIMITS
+import pandas as pd
+from src.config.config_linear import CURRENT_DATE, DATE_LIMITS, ACCEPTED_DATE_FORMATS
 
 
-def parse_date(date_input) -> datetime:
+def parse_date(date_input) -> tuple:
     """
     Parse date from multiple formats: dd/mm/yyyy, dd/mm/yy, yyyy, or datetime object
-    Returns None if unparseable
-    """
-    if isinstance(date_input, datetime):
-        return date_input
+    Returns: (datetime_obj, is_valid, observation)
     
-    if pd.isna(date_input):
-        return None
+    - datetime_obj: parsed date or None
+    - is_valid: True if format is correct, False if unparseable
+    - observation: error message if invalid
+    """
+
+    if isinstance(date_input, datetime):
+        return date_input, True, ""
+    
+    if pd.isna(date_input) or date_input is None or str(date_input).strip() == "":
+        return None, False, "sem data"
     
     date_str = str(date_input).strip()
     
     # Try yyyy format
     if re.match(r'^\d{4}$', date_str):
         try:
-            return datetime(int(date_str), 12, 31)  # end of year
+            return datetime(int(date_str), 12, 31), True, ""
         except:
-            return None
+            return None, False, f"formato de data invalido: '{date_str}'"
     
     # Try dd/mm/yyyy or dd/mm/yy
-    for fmt in ['%d/%m/%Y', '%d/%m/%y', '%d-%m-%Y', '%d-%m-%y']:
+    for fmt in ACCEPTED_DATE_FORMATS:
         try:
-            return datetime.strptime(date_str, fmt)
+            parsed = datetime.strptime(date_str, fmt)
+            return parsed, True, ""
         except:
             continue
-    
-    return None
+    # if we reach here, format is invalid
+    return None, False, f"formato de data invalido: '{date_str}'"
 
 
 def validate_date(date_obj: datetime, item_type: str = "projeto") -> tuple:
@@ -43,7 +50,7 @@ def validate_date(date_obj: datetime, item_type: str = "projeto") -> tuple:
     - observation: reason/note
     """
     if date_obj is None:
-        return False, "DESCL", "Data ausente"
+        return False, "DESCL", "sem data ou formato invalido"
     
     limit_years = DATE_LIMITS.get(item_type, 10)
     year_diff = CURRENT_DATE.year - date_obj.year

@@ -1,13 +1,24 @@
 from datetime import datetime
 
+
+# --- date validation ---
 CURRENT_DATE = datetime.now()
+
 DATE_LIMITS = {
     "projeto": 15,
     "formação": 999,
 }
 
-MAX_PROJECTS_PER_DISCIPLINA = 5
+# Accepted date formats for parsing
+ACCEPTED_DATE_FORMATS = [
+    '%d/%m/%Y',   # dd/mm/yyyy
+    '%d/%m/%y',   # dd/mm/yy
+    '%d-%m-%Y',   # dd-mm-yyyy
+    '%d-%m-%y',   # dd-mm-yy
+]
 
+
+# --- factor configuration ---
 FACTOR_WEIGHTS = {
     "A1": 17,
     "A2": 30,
@@ -15,10 +26,6 @@ FACTOR_WEIGHTS = {
     "A4": 20,
     "A5": 3,
 }
-
-# Absolute thresholds (euros)
-    # anything below → 0 points
-    # anything above → 100 points
 
 FACTOR_THRESHOLDS = {
      "A1": {
@@ -42,6 +49,8 @@ FACTOR_THRESHOLDS = {
         "formação BIM": {"ABS_MIN": 80.0, "ABS_MAX": 800.0},
     }
 }
+
+MAX_PROJECTS_PER_DISCIPLINA = 5
 
 MIN_SCORE_PER_PROJECT = 1
 MAX_SCORE_PER_PROJECT = 100
